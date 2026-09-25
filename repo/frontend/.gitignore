@@ -1,0 +1,21 @@
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore environment variables / secrets
+.env
+*.secret
+
+# Ignore log files and caches
+*.log
+npm-debug.log*
+.pytest_cache/
+
+# Ignore dependency directories
+node_modules/
+venv/
+env/
+
+# Ignore build outputs
+dist/
+build/

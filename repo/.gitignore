@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# Environment variables (CRITICAL - never commit)
+.env
+*.env
+.env.local
+.env.*.local
+**/.env
+backend/.env
+frontend/.env
+!*.env.example
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+**/logs/
+
+# Build outputs
+dist/
+build/
+**/dist/
+
+# Uploads (keep folder, ignore contents)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# AI tool cache
+.kilo/
+.antigravity/
+.cursor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+*.pid

@@ -1,0 +1,71 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const morgan = require('morgan');
+const path = require('path');
+const env = require('./config/env');
+const logger = require('./config/logger');
+const routes = require('./routes');
+const globalErrorHandler = require('./middleware/errorHandler');
+const AppError = require('./utils/AppError');
+const ERROR_CODES = require('./constants/errorCodes');
+
+const app = express();
+
+// Security Headers
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+);
+
+// CORS configuration
+const corsOptions = {
+  origin: env.nodeEnv === 'production' ? env.clientUrl : ['http://localhost:5173', 'http://127.0.0.1:5173', env.clientUrl],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+};
+app.use(cors(corsOptions));
+
+// Body parsers & mongo sanitization against injection
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(mongoSanitize());
+
+// HTTP request logging via Morgan -> Winston stream
+const morganStream = {
+  write: (message) => logger.info(message.trim())
+};
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', { stream: morganStream }));
+
+// Static uploads route (for local fallback storage mode)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// API Routes
+app.use('/api/v1', routes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    env: env.nodeEnv
+  });
+});
+
+// 404 Route Handler
+app.use('*', (req, res, next) => {
+  next(
+    new AppError(
+      `Cannot find endpoint ${req.originalUrl} on this server`,
+      404,
+      ERROR_CODES.ERR_PRODUCT_NOT_FOUND
+    )
+  );
+});
+
+// Global Error Handler Middleware
+app.use(globalErrorHandler);
+
+module.exports = app;

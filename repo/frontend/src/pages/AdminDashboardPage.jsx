@@ -1,0 +1,709 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../services/api';
+import {
+  Package,
+  ShoppingBag,
+  Plus,
+  Trash2,
+  Edit,
+  Upload,
+  LogOut,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  X,
+  Ribbon,
+  Gift,
+  Clock
+} from 'lucide-react';
+
+const ALLOWED_TRANSITIONS = {
+  PENDING_REVIEW: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['CRAFTING', 'CANCELLED'],
+  CRAFTING: ['DISPATCHED', 'CANCELLED'],
+  DISPATCHED: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [],
+  CANCELLED: []
+};
+
+export default function AdminDashboardPage() {
+  const { admin, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products'
+
+  // Orders State
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  // Products State
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  // Product Modal Form State
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [modalError, setModalError] = useState(null);
+
+  const [productForm, setProductForm] = useState({
+    title: '',
+    description: '',
+    basePrice: '',
+    stemCount: '',
+    heightCm: '',
+    widthCm: '',
+    ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
+    wrappingPaperShades: 'Cream Matte, Kraft Vintage, Blush Pink',
+    defaultLeadTimeDays: '3',
+    availability: 'available',
+    stockCount: '10'
+  });
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [fileError, setFileError] = useState(null);
+
+  // Fetch Orders
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const url = orderStatusFilter ? `/orders?status=${orderStatusFilter}` : '/orders';
+      const response = await apiRequest(url);
+      if (response.success) {
+        setOrders(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load admin orders', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Fetch Products
+  const fetchProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const response = await apiRequest('/products?limit=100');
+      if (response.success) {
+        setProducts(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load admin products', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'orders') fetchOrders();
+    if (activeTab === 'products') fetchProducts();
+  }, [activeTab, orderStatusFilter]);
+
+  // Handle Order Status Patch with Transition Guard
+  const handleStatusChange = async (orderId, newStatus) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const response = await apiRequest(`/orders/${orderId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (response.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o._id === orderId ? { ...o, orderStatus: newStatus } : o))
+        );
+      }
+    } catch (err) {
+      alert(`Status update rejected: ${err.message}`);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  // Handle File Input Change with MIME and 5MB Validation
+  const handleFileChange = (e) => {
+    setFileError(null);
+    const files = Array.from(e.target.files);
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    for (const file of files) {
+      if (!validTypes.includes(file.type)) {
+        setFileError('Only JPEG, PNG, and WebP images are allowed.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setFileError(`File ${file.name} exceeds the 5MB size limit.`);
+        return;
+      }
+    }
+
+    setSelectedFiles(files);
+  };
+
+  // Open Modal for Add or Edit
+  const openProductModal = (product = null) => {
+    setModalError(null);
+    setFileError(null);
+    setSelectedFiles([]);
+
+    if (product) {
+      setEditingProduct(product);
+      setProductForm({
+        title: product.title,
+        description: product.description,
+        basePrice: product.basePrice.toString(),
+        stemCount: product.stemCount.toString(),
+        heightCm: product.dimensions?.heightCm?.toString() || '35',
+        widthCm: product.dimensions?.widthCm?.toString() || '25',
+        ribbonColors: product.customization?.ribbonColors?.join(', ') || '',
+        wrappingPaperShades: product.customization?.wrappingPaperShades?.join(', ') || '',
+        defaultLeadTimeDays: product.customization?.defaultLeadTimeDays?.toString() || '3',
+        availability: product.availability,
+        stockCount: product.stockCount?.toString() || '0'
+      });
+    } else {
+      setEditingProduct(null);
+      setProductForm({
+        title: '',
+        description: '',
+        basePrice: '45.00',
+        stemCount: '7',
+        heightCm: '35',
+        widthCm: '25',
+        ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
+        wrappingPaperShades: 'Cream Matte, Kraft Vintage, Blush Pink',
+        defaultLeadTimeDays: '3',
+        availability: 'available',
+        stockCount: '10'
+      });
+    }
+    setShowProductModal(true);
+  };
+
+  // Submit Product Add/Edit Form via FormData
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    setFormSubmitting(true);
+    setModalError(null);
+
+    const formData = new FormData();
+    formData.append('title', productForm.title);
+    formData.append('description', productForm.description);
+    formData.append('basePrice', productForm.basePrice);
+    formData.append('stemCount', productForm.stemCount);
+
+    formData.append(
+      'dimensions',
+      JSON.stringify({
+        heightCm: Number(productForm.heightCm),
+        widthCm: Number(productForm.widthCm)
+      })
+    );
+
+    const ribbonList = productForm.ribbonColors.split(',').map((s) => s.trim()).filter(Boolean);
+    const wrapperList = productForm.wrappingPaperShades.split(',').map((s) => s.trim()).filter(Boolean);
+
+    formData.append(
+      'customization',
+      JSON.stringify({
+        ribbonColors: ribbonList,
+        wrappingPaperShades: wrapperList,
+        defaultLeadTimeDays: Number(productForm.defaultLeadTimeDays)
+      })
+    );
+
+    formData.append('availability', productForm.availability);
+    formData.append('stockCount', productForm.stockCount);
+
+    selectedFiles.forEach((file) => {
+      formData.append('images', file);
+    });
+
+    try {
+      const endpoint = editingProduct ? `/products/${editingProduct._id}` : '/products';
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      const response = await apiRequest(endpoint, {
+        method,
+        body: formData
+      });
+
+      if (response.success) {
+        setShowProductModal(false);
+        fetchProducts();
+      }
+    } catch (err) {
+      setModalError(err.message || 'Failed to save bouquet product');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  // Delete Product
+  const handleDeleteProduct = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete '${title}' and purge its images from Cloudinary?`)) return;
+
+    try {
+      const response = await apiRequest(`/products/${id}`, { method: 'DELETE' });
+      if (response.success) {
+        setProducts((prev) => prev.filter((p) => p._id !== id));
+      }
+    } catch (err) {
+      alert(`Delete failed: ${err.message}`);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      
+      {/* Header Bar */}
+      <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-2xl font-bold text-charcoal">Studio Management Dashboard</h1>
+            <p className="text-xs text-stone-500">Logged in as {admin?.email}</p>
+          </div>
+        </div>
+
+        <button
+          onClick={logout}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-semibold transition"
+        >
+          <LogOut className="w-4 h-4" /> Logout
+        </button>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-4 border-b border-stone-200">
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`pb-4 px-2 font-serif font-bold text-base flex items-center gap-2 border-b-2 transition ${
+            activeTab === 'orders'
+              ? 'border-rose-600 text-rose-600'
+              : 'border-transparent text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" /> Order Tracker ({orders.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`pb-4 px-2 font-serif font-bold text-base flex items-center gap-2 border-b-2 transition ${
+            activeTab === 'products'
+              ? 'border-rose-600 text-rose-600'
+              : 'border-transparent text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          <Package className="w-5 h-5" /> Bouquet Catalog ({products.length})
+        </button>
+      </div>
+
+      {/* ORDERS TAB */}
+      {activeTab === 'orders' && (
+        <div className="space-y-6">
+          
+          {/* Order Status Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider mr-2">Status Filter:</span>
+            {['', 'PENDING_REVIEW', 'CONFIRMED', 'CRAFTING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setOrderStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                  orderStatusFilter === st
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
+                }`}
+              >
+                {st || 'All Orders'}
+              </button>
+            ))}
+          </div>
+
+          {loadingOrders ? (
+            <div className="py-20 text-center text-stone-400">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-600 mb-2" />
+              <span>Loading customer orders...</span>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-stone-200 text-center space-y-2">
+              <ShoppingBag className="w-10 h-10 text-stone-300 mx-auto" />
+              <h3 className="font-serif text-lg font-bold text-charcoal">No orders found</h3>
+              <p className="text-xs text-stone-500">Orders placed by customers will appear here.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-stone-50 border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                      <th className="p-4">Order ID & Date</th>
+                      <th className="p-4">Customer Details</th>
+                      <th className="p-4">Bouquets & Customization</th>
+                      <th className="p-4">Total</th>
+                      <th className="p-4">Status & Allowed Transitions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100 text-xs">
+                    {orders.map((order) => {
+                      const allowedNext = ALLOWED_TRANSITIONS[order.orderStatus] || [];
+                      return (
+                        <tr key={order._id} className="hover:bg-stone-50/50 transition">
+                          
+                          <td className="p-4 align-top">
+                            <span className="font-mono font-bold text-rose-600 block">{order.orderId}</span>
+                            <span className="text-stone-400 text-[11px]">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </span>
+                          </td>
+
+                          <td className="p-4 align-top space-y-1">
+                            <div className="font-bold text-charcoal">{order.customer?.fullName}</div>
+                            <div className="text-stone-500">{order.customer?.phone}</div>
+                            <div className="text-stone-400">{order.customer?.email}</div>
+                            <div className="text-stone-500 text-[11px] max-w-xs">
+                              {order.customer?.deliveryAddress?.addressLine}, {order.customer?.deliveryAddress?.city}
+                            </div>
+                          </td>
+
+                          <td className="p-4 align-top space-y-2">
+                            {order.items?.map((item, idx) => (
+                              <div key={idx} className="bg-stone-50 p-2.5 rounded-xl border border-stone-200/80 space-y-1">
+                                <div className="font-bold text-charcoal flex justify-between">
+                                  <span>{item.bouquetTitle}</span>
+                                  <span className="text-stone-500">Qty: {item.quantity}</span>
+                                </div>
+                                <div className="text-[11px] text-stone-500 flex items-center gap-1">
+                                  <Ribbon className="w-3 h-3 text-rose-500" />
+                                  <span>Ribbon: {item.selectedCustomization?.ribbonColor} | Wrapper: {item.selectedCustomization?.wrappingPaperShade}</span>
+                                </div>
+                                {item.selectedCustomization?.giftCardText && (
+                                  <div className="text-[11px] text-rose-700 italic flex items-center gap-1">
+                                    <Gift className="w-3 h-3 text-rose-500" />
+                                    <span>"{item.selectedCustomization.giftCardText}"</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </td>
+
+                          <td className="p-4 align-top font-serif font-bold text-sm text-charcoal">
+                            ${order.totalPrice?.toFixed(2)}
+                          </td>
+
+                          <td className="p-4 align-top space-y-2">
+                            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                              {order.orderStatus}
+                            </span>
+
+                            {/* Status Dropdown restricting ONLY to valid next states */}
+                            {allowedNext.length > 0 ? (
+                              <select
+                                value=""
+                                disabled={updatingOrderId === order._id}
+                                onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                                className="block w-full px-3 py-1.5 rounded-xl border border-stone-300 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                              >
+                                <option value="" disabled>Advance Status...</option>
+                                {allowedNext.map((nextSt) => (
+                                  <option key={nextSt} value={nextSt}>
+                                    → {nextSt}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="block text-[11px] text-stone-400 font-semibold italic">
+                                Terminal State
+                              </span>
+                            )}
+                          </td>
+
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* PRODUCTS TAB */}
+      {activeTab === 'products' && (
+        <div className="space-y-6">
+          
+          <div className="flex justify-between items-center">
+            <h2 className="font-serif text-xl font-bold text-charcoal">Bouquet Inventory</h2>
+            <button
+              onClick={() => openProductModal()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 text-white font-semibold text-xs shadow-md hover:bg-rose-700 transition"
+            >
+              <Plus className="w-4 h-4" /> Add New Bouquet
+            </button>
+          </div>
+
+          {loadingProducts ? (
+            <div className="py-20 text-center text-stone-400">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-600 mb-2" />
+              <span>Loading products...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <div key={product._id} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-soft flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex gap-4 items-center">
+                      <img
+                        src={product.images?.[0]?.url || 'https://images.unsplash.com/photo-1563245372-f21724e3856d'}
+                        alt={product.title}
+                        className="w-16 h-16 rounded-xl object-cover bg-stone-100 flex-shrink-0"
+                      />
+                      <div>
+                        <h3 className="font-serif font-bold text-base text-charcoal line-clamp-1">{product.title}</h3>
+                        <span className="font-serif font-bold text-rose-600 text-sm">${product.basePrice?.toFixed(2)}</span>
+                        <div className="text-[11px] text-stone-500">{product.stemCount} Stems • Stock: {product.stockCount}</div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-stone-500 line-clamp-2">{product.description}</p>
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">
+                      {product.availability}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openProductModal(product)}
+                        className="p-2 text-stone-600 hover:text-rose-600 hover:bg-stone-100 rounded-lg transition"
+                        title="Edit product"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product._id, product.title)}
+                        className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ADD / EDIT PRODUCT MODAL */}
+      {showProductModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200">
+            
+            <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+              <h3 className="font-serif text-xl font-bold text-charcoal">
+                {editingProduct ? 'Edit Bouquet Specifications' : 'Add New Handcrafted Bouquet'}
+              </h3>
+              <button onClick={() => setShowProductModal(false)} className="text-stone-400 hover:text-stone-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {modalError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
+              
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Bouquet Title</label>
+                <input
+                  type="text"
+                  required
+                  value={productForm.title}
+                  onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
+                  placeholder="e.g. Vintage Peony Dream Bouquet"
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={productForm.description}
+                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                  placeholder="Describe the flowers, yarn type, and artistic inspiration..."
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Base Price ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={productForm.basePrice}
+                    onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Stem Count</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.stemCount}
+                    onChange={(e) => setProductForm({ ...productForm, stemCount: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Stock Count</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.stockCount}
+                    onChange={(e) => setProductForm({ ...productForm, stockCount: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Height (cm)</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.heightCm}
+                    onChange={(e) => setProductForm({ ...productForm, heightCm: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Width (cm)</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.widthCm}
+                    onChange={(e) => setProductForm({ ...productForm, widthCm: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Lead Time (Days)</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.defaultLeadTimeDays}
+                    onChange={(e) => setProductForm({ ...productForm, defaultLeadTimeDays: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Ribbon Shades (Comma Separated)</label>
+                  <input
+                    type="text"
+                    required
+                    value={productForm.ribbonColors}
+                    onChange={(e) => setProductForm({ ...productForm, ribbonColors: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-charcoal mb-1">Wrapping Paper Shades (Comma Separated)</label>
+                  <input
+                    type="text"
+                    required
+                    value={productForm.wrappingPaperShades}
+                    onChange={(e) => setProductForm({ ...productForm, wrappingPaperShades: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Availability Status</label>
+                <select
+                  value={productForm.availability}
+                  onChange={(e) => setProductForm({ ...productForm, availability: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white"
+                >
+                  <option value="available">available (Ready to ship)</option>
+                  <option value="made_to_order">made_to_order (Crafted on demand)</option>
+                  <option value="sold_out">sold_out</option>
+                </select>
+              </div>
+
+              {/* Drag and Drop File Upload Area */}
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Bouquet Photos (Cloudinary Upload - Max 5MB, JPEG/PNG/WebP)</label>
+                <div className="border-2 border-dashed border-stone-200 hover:border-rose-400 rounded-2xl p-4 text-center cursor-pointer bg-stone-50">
+                  <Upload className="w-6 h-6 text-stone-400 mx-auto mb-1" />
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="photo-upload-input"
+                  />
+                  <label htmlFor="photo-upload-input" className="cursor-pointer text-rose-600 font-semibold">
+                    Click to select images
+                  </label>
+                  <p className="text-[10px] text-stone-400 mt-1">
+                    {selectedFiles.length > 0
+                      ? `${selectedFiles.length} file(s) selected: ${selectedFiles.map((f) => f.name).join(', ')}`
+                      : 'Drag & drop photos or click to browse'}
+                  </p>
+                </div>
+                {fileError && <p className="text-red-600 text-[11px] mt-1">{fileError}</p>}
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => setShowProductModal(false)}
+                  className="px-5 py-2 rounded-full border border-stone-200 text-stone-600 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={formSubmitting || !!fileError}
+                  className="px-6 py-2 rounded-full bg-rose-600 text-white font-semibold shadow hover:bg-rose-700 transition flex items-center gap-2"
+                >
+                  {formSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Bouquet'}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

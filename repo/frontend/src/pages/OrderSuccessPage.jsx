@@ -93,7 +93,7 @@ export default function OrderSuccessPage() {
             </div>
             <div className="pt-4 border-t border-stone-200 flex justify-between font-serif font-bold text-lg text-charcoal">
               <span>Total Price</span>
-              <span className="text-rose-600">${order.totalPrice?.toFixed(2)}</span>
+              <span className="text-rose-600">₹{order.totalPrice}</span>
             </div>
           </div>
 

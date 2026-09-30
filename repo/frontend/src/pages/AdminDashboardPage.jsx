@@ -16,7 +16,12 @@ import {
   X,
   Ribbon,
   Gift,
-  Clock
+  Clock,
+  Star,
+  GripVertical,
+  MoveLeft,
+  MoveRight,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const ALLOWED_TRANSITIONS = {
@@ -26,6 +31,15 @@ const ALLOWED_TRANSITIONS = {
   DISPATCHED: ['DELIVERED', 'CANCELLED'],
   DELIVERED: [],
   CANCELLED: []
+};
+
+// Revoke object URLs to avoid memory leaks
+const cleanupBlobUrls = (items) => {
+  (items || []).forEach((item) => {
+    if (item.type === 'new' && item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl);
+    }
+  });
 };
 
 export default function AdminDashboardPage() {
@@ -61,8 +75,14 @@ export default function AdminDashboardPage() {
     availability: 'available',
     stockCount: '10'
   });
-  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  // Multi-image management state
+  // Items array: { id, type: 'existing' | 'new', url, file, previewUrl, public_id, isPrimary, order }
+  const [imageItems, setImageItems] = useState([]);
+  const [removeImageIds, setRemoveImageIds] = useState([]);
   const [fileError, setFileError] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [isDraggingOverDropzone, setIsDraggingOverDropzone] = useState(false);
 
   // Fetch Orders
   const fetchOrders = async () => {
@@ -120,31 +140,152 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Handle File Input Change with MIME and 5MB Validation
-  const handleFileChange = (e) => {
+  // Add Files handler with client-side validation
+  const handleAddFiles = (filesToAdd) => {
     setFileError(null);
-    const files = Array.from(e.target.files);
+    const files = Array.from(filesToAdd);
+    if (!files.length) return;
+
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
+    if (imageItems.length + files.length > 8) {
+      setFileError(`Cannot exceed 8 total photos. Current: ${imageItems.length}, Adding: ${files.length}`);
+      return;
+    }
+
+    const newItems = [];
     for (const file of files) {
       if (!validTypes.includes(file.type)) {
-        setFileError('Only JPEG, PNG, and WebP images are allowed.');
+        setFileError(`File "${file.name}" is not a valid format. Only JPEG, PNG, and WebP are allowed.`);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        setFileError(`File ${file.name} exceeds the 5MB size limit.`);
+        setFileError(`File "${file.name}" exceeds the 5MB size limit.`);
         return;
       }
+      const previewUrl = URL.createObjectURL(file);
+      newItems.push({
+        id: `new-${Date.now()}-${Math.random()}`,
+        type: 'new',
+        file,
+        previewUrl,
+        url: previewUrl,
+        isPrimary: false,
+        order: imageItems.length + newItems.length
+      });
     }
 
-    setSelectedFiles(files);
+    const updated = [...imageItems, ...newItems];
+    if (!updated.some((i) => i.isPrimary) && updated.length > 0) {
+      updated[0].isPrimary = true;
+    }
+    setImageItems(updated);
+  };
+
+  // Input change handler for file picker
+  const handleFileInputChange = (e) => {
+    handleAddFiles(e.target.files);
+    e.target.value = ''; // Reset input so re-selecting same file triggers change
+  };
+
+  // Dropzone drag & drop handlers
+  const handleDropzoneDragOver = (e) => {
+    e.preventDefault();
+    setIsDraggingOverDropzone(true);
+  };
+
+  const handleDropzoneDragLeave = (e) => {
+    e.preventDefault();
+    setIsDraggingOverDropzone(false);
+  };
+
+  const handleDropzoneDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingOverDropzone(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleAddFiles(e.dataTransfer.files);
+    }
+  };
+
+  // Remove thumbnail from grid
+  const handleRemoveImageItem = (index) => {
+    setFileError(null);
+    const target = imageItems[index];
+
+    if (target.type === 'new' && target.previewUrl) {
+      URL.revokeObjectURL(target.previewUrl);
+    } else if (target.type === 'existing' && target.public_id) {
+      setRemoveImageIds((prev) => [...prev, target.public_id]);
+    }
+
+    const nextItems = imageItems.filter((_, i) => i !== index);
+    if (target.isPrimary && nextItems.length > 0) {
+      nextItems[0].isPrimary = true;
+    }
+    nextItems.forEach((img, idx) => {
+      img.order = idx;
+    });
+    setImageItems(nextItems);
+
+    if (nextItems.length === 0) {
+      setFileError('At least 1 photo is required for the bouquet.');
+    }
+  };
+
+  // Set Primary Star Badge
+  const handleSetPrimary = (index) => {
+    setImageItems((prev) =>
+      prev.map((item, i) => ({
+        ...item,
+        isPrimary: i === index
+      }))
+    );
+  };
+
+  // Reorder thumbnails via Drag and Drop
+  const handleThumbnailDragStart = (e, index) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    setDraggedIndex(index);
+  };
+
+  const handleThumbnailDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleThumbnailDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const itemsCopy = [...imageItems];
+    const [moved] = itemsCopy.splice(draggedIndex, 1);
+    itemsCopy.splice(targetIndex, 0, moved);
+
+    itemsCopy.forEach((item, idx) => {
+      item.order = idx;
+    });
+
+    setImageItems(itemsCopy);
+    setDraggedIndex(null);
+  };
+
+  // Manual move left/right for touch / keyboard users
+  const moveImagePosition = (fromIdx, toIdx) => {
+    if (toIdx < 0 || toIdx >= imageItems.length) return;
+    const itemsCopy = [...imageItems];
+    const [moved] = itemsCopy.splice(fromIdx, 1);
+    itemsCopy.splice(toIdx, 0, moved);
+    itemsCopy.forEach((item, idx) => {
+      item.order = idx;
+    });
+    setImageItems(itemsCopy);
   };
 
   // Open Modal for Add or Edit
   const openProductModal = (product = null) => {
+    cleanupBlobUrls(imageItems);
     setModalError(null);
     setFileError(null);
-    setSelectedFiles([]);
+    setRemoveImageIds([]);
 
     if (product) {
       setEditingProduct(product);
@@ -161,6 +302,21 @@ export default function AdminDashboardPage() {
         availability: product.availability,
         stockCount: product.stockCount?.toString() || '0'
       });
+
+      const sorted = [...(product.images || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const items = sorted.map((img, idx) => ({
+        id: img.public_id || `exist-${idx}`,
+        type: 'existing',
+        url: img.url,
+        public_id: img.public_id,
+        isPrimary: img.isPrimary,
+        order: img.order ?? idx
+      }));
+
+      if (items.length > 0 && !items.some((i) => i.isPrimary)) {
+        items[0].isPrimary = true;
+      }
+      setImageItems(items);
     } else {
       setEditingProduct(null);
       setProductForm({
@@ -176,8 +332,16 @@ export default function AdminDashboardPage() {
         availability: 'available',
         stockCount: '10'
       });
+      setImageItems([]);
     }
     setShowProductModal(true);
+  };
+
+  // Close product modal with URL cleanup
+  const closeProductModal = () => {
+    cleanupBlobUrls(imageItems);
+    setImageItems([]);
+    setShowProductModal(false);
   };
 
   // Submit Product Add/Edit Form via FormData
@@ -185,6 +349,18 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setFormSubmitting(true);
     setModalError(null);
+
+    if (imageItems.length === 0) {
+      setModalError('At least 1 photo is required for the bouquet.');
+      setFormSubmitting(false);
+      return;
+    }
+
+    if (imageItems.length > 8) {
+      setModalError('Maximum 8 photos allowed per bouquet.');
+      setFormSubmitting(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append('title', productForm.title);
@@ -215,8 +391,25 @@ export default function AdminDashboardPage() {
     formData.append('availability', productForm.availability);
     formData.append('stockCount', productForm.stockCount);
 
-    selectedFiles.forEach((file) => {
-      formData.append('images', file);
+    if (removeImageIds.length > 0) {
+      formData.append('removeImageIds', JSON.stringify(removeImageIds));
+    }
+
+    const primaryItem = imageItems.find((i) => i.isPrimary) || imageItems[0];
+    if (primaryItem && primaryItem.type === 'existing' && primaryItem.public_id) {
+      formData.append('primaryImageId', primaryItem.public_id);
+    }
+
+    const imagesOrder = imageItems.map((item, idx) => ({
+      public_id: item.public_id || item.id,
+      order: idx
+    }));
+    formData.append('imagesOrder', JSON.stringify(imagesOrder));
+
+    // Append newly selected files
+    const newFiles = imageItems.filter((item) => item.type === 'new');
+    newFiles.forEach((item) => {
+      formData.append('images', item.file);
     });
 
     try {
@@ -229,6 +422,8 @@ export default function AdminDashboardPage() {
       });
 
       if (response.success) {
+        cleanupBlobUrls(imageItems);
+        setImageItems([]);
         setShowProductModal(false);
         fetchProducts();
       }
@@ -391,7 +586,7 @@ export default function AdminDashboardPage() {
                           </td>
 
                           <td className="p-4 align-top font-serif font-bold text-sm text-charcoal">
-                            ${order.totalPrice?.toFixed(2)}
+                            ₹{order.totalPrice?.toFixed(2)}
                           </td>
 
                           <td className="p-4 align-top space-y-2">
@@ -399,7 +594,6 @@ export default function AdminDashboardPage() {
                               {order.orderStatus}
                             </span>
 
-                            {/* Status Dropdown restricting ONLY to valid next states */}
                             {allowedNext.length > 0 ? (
                               <select
                                 value=""
@@ -454,47 +648,57 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <div key={product._id} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-soft flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex gap-4 items-center">
-                      <img
-                        src={product.images?.[0]?.url || 'https://images.unsplash.com/photo-1563245372-f21724e3856d'}
-                        alt={product.title}
-                        className="w-16 h-16 rounded-xl object-cover bg-stone-100 flex-shrink-0"
-                      />
-                      <div>
-                        <h3 className="font-serif font-bold text-base text-charcoal line-clamp-1">{product.title}</h3>
-                        <span className="font-serif font-bold text-rose-600 text-sm">${product.basePrice?.toFixed(2)}</span>
-                        <div className="text-[11px] text-stone-500">{product.stemCount} Stems • Stock: {product.stockCount}</div>
+              {products.map((product) => {
+                const primaryImg = product.images?.find((img) => img.isPrimary)?.url || product.images?.[0]?.url || 'https://images.unsplash.com/photo-1563245372-f21724e3856d';
+                return (
+                  <div key={product._id} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-soft flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex gap-4 items-center">
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
+                          <img
+                            src={primaryImg}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                          {product.images?.length > 1 && (
+                            <span className="absolute bottom-1 right-1 bg-stone-900/80 text-white text-[9px] px-1 rounded font-bold">
+                              +{product.images.length - 1}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-serif font-bold text-base text-charcoal line-clamp-1">{product.title}</h3>
+                          <span className="font-serif font-bold text-rose-600 text-sm">₹{product.basePrice}</span>
+                          <div className="text-[11px] text-stone-500">{product.stemCount} Stems • Stock: {product.stockCount}</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-stone-500 line-clamp-2">{product.description}</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">
+                        {product.availability}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openProductModal(product)}
+                          className="p-2 text-stone-600 hover:text-rose-600 hover:bg-stone-100 rounded-lg transition"
+                          title="Edit product"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product._id, product.title)}
+                          className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Delete product"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <p className="text-xs text-stone-500 line-clamp-2">{product.description}</p>
                   </div>
-
-                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">
-                      {product.availability}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openProductModal(product)}
-                        className="p-2 text-stone-600 hover:text-rose-600 hover:bg-stone-100 rounded-lg transition"
-                        title="Edit product"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product._id, product.title)}
-                        className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -504,13 +708,13 @@ export default function AdminDashboardPage() {
       {/* ADD / EDIT PRODUCT MODAL */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             
             <div className="flex items-center justify-between border-b border-stone-200 pb-4">
               <h3 className="font-serif text-xl font-bold text-charcoal">
                 {editingProduct ? 'Edit Bouquet Specifications' : 'Add New Handcrafted Bouquet'}
               </h3>
-              <button onClick={() => setShowProductModal(false)} className="text-stone-400 hover:text-stone-600">
+              <button onClick={closeProductModal} className="text-stone-400 hover:text-stone-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -550,10 +754,10 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-charcoal mb-1">Base Price ($)</label>
+                  <label className="block font-bold text-charcoal mb-1">Base Price (₹)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="1"
                     required
                     value={productForm.basePrice}
                     onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
@@ -656,45 +860,160 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              {/* Drag and Drop File Upload Area */}
-              <div>
-                <label className="block font-bold text-charcoal mb-1">Bouquet Photos (Cloudinary Upload - Max 5MB, JPEG/PNG/WebP)</label>
-                <div className="border-2 border-dashed border-stone-200 hover:border-rose-400 rounded-2xl p-4 text-center cursor-pointer bg-stone-50">
-                  <Upload className="w-6 h-6 text-stone-400 mx-auto mb-1" />
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="photo-upload-input"
-                  />
-                  <label htmlFor="photo-upload-input" className="cursor-pointer text-rose-600 font-semibold">
-                    Click to select images
+              {/* MULTI-PHOTO UPLOAD & REORDER GALLERY MANAGER */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-charcoal">
+                    Bouquet Multi-Photo Gallery (1–8 Photos • Max 5MB each)
                   </label>
-                  <p className="text-[10px] text-stone-400 mt-1">
-                    {selectedFiles.length > 0
-                      ? `${selectedFiles.length} file(s) selected: ${selectedFiles.map((f) => f.name).join(', ')}`
-                      : 'Drag & drop photos or click to browse'}
-                  </p>
+                  <span className="text-[11px] font-semibold text-stone-500">
+                    {imageItems.length} / 8 photos selected
+                  </span>
                 </div>
-                {fileError && <p className="text-red-600 text-[11px] mt-1">{fileError}</p>}
+
+                {/* Thumbnail Grid with Drag & Drop Reordering */}
+                {imageItems.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-stone-50 rounded-2xl border border-stone-200">
+                    {imageItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) => handleThumbnailDragStart(e, index)}
+                        onDragOver={handleThumbnailDragOver}
+                        onDrop={(e) => handleThumbnailDrop(e, index)}
+                        className={`relative group bg-white rounded-xl overflow-hidden border-2 transition-all shadow-xs ${
+                          item.isPrimary ? 'border-rose-500 ring-2 ring-rose-200' : 'border-stone-200'
+                        }`}
+                      >
+                        <div className="aspect-square relative">
+                          <img
+                            src={item.url || item.previewUrl}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Primary Badge Tag */}
+                          {item.isPrimary && (
+                            <span className="absolute top-1 left-1 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5 z-10">
+                              <Star className="w-2.5 h-2.5 fill-current" /> Primary
+                            </span>
+                          )}
+
+                          {/* Top-Right Remove Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageItem(index)}
+                            title="Remove photo"
+                            className="absolute top-1 right-1 bg-stone-900/80 hover:bg-red-600 text-white p-1 rounded-full transition z-10"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Hover Overlay Controls */}
+                          <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5 text-white">
+                            <div className="flex justify-between items-center">
+                              {/* Drag handle */}
+                              <span className="cursor-grab text-stone-300 hover:text-white" title="Drag to reorder">
+                                <GripVertical className="w-4 h-4" />
+                              </span>
+                              
+                              {/* Set Primary Button */}
+                              {!item.isPrimary && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetPrimary(index)}
+                                  className="text-[10px] bg-rose-600 hover:bg-rose-700 text-white px-1.5 py-0.5 rounded font-semibold flex items-center gap-0.5"
+                                  title="Set as main thumbnail"
+                                >
+                                  <Star className="w-3 h-3" /> Set Main
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Move Left / Right Buttons */}
+                            <div className="flex justify-between items-center text-[10px]">
+                              <button
+                                type="button"
+                                disabled={index === 0}
+                                onClick={() => moveImagePosition(index, index - 1)}
+                                className="p-1 disabled:opacity-30 hover:text-rose-400"
+                                title="Move left"
+                              >
+                                <MoveLeft className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="font-mono text-[9px] text-stone-300">#{index + 1}</span>
+                              <button
+                                type="button"
+                                disabled={index === imageItems.length - 1}
+                                onClick={() => moveImagePosition(index, index + 1)}
+                                className="p-1 disabled:opacity-30 hover:text-rose-400"
+                                title="Move right"
+                              >
+                                <MoveRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Drag and Drop File Input Area */}
+                {imageItems.length < 8 && (
+                  <div
+                    onDragOver={handleDropzoneDragOver}
+                    onDragLeave={handleDropzoneDragLeave}
+                    onDrop={handleDropzoneDrop}
+                    className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition ${
+                      isDraggingOverDropzone
+                        ? 'border-rose-500 bg-rose-50/80 scale-[1.01]'
+                        : 'border-stone-200 hover:border-rose-400 bg-stone-50/50'
+                    }`}
+                  >
+                    <Upload className="w-6 h-6 text-stone-400 mx-auto mb-1" />
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                      id="multi-photo-upload-input"
+                    />
+                    <label htmlFor="multi-photo-upload-input" className="cursor-pointer text-rose-600 font-semibold block">
+                      Click to select multiple photos
+                    </label>
+                    <p className="text-[10px] text-stone-400 mt-1">
+                      Drag & drop bouquet images here (JPEG, PNG, WebP up to 5MB)
+                    </p>
+                  </div>
+                )}
+
+                {fileError && <p className="text-red-600 text-[11px] font-semibold">{fileError}</p>}
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-stone-200">
                 <button
                   type="button"
-                  onClick={() => setShowProductModal(false)}
+                  onClick={closeProductModal}
                   className="px-5 py-2 rounded-full border border-stone-200 text-stone-600 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={formSubmitting || !!fileError}
-                  className="px-6 py-2 rounded-full bg-rose-600 text-white font-semibold shadow hover:bg-rose-700 transition flex items-center gap-2"
+                  disabled={formSubmitting || imageItems.length === 0 || !!fileError}
+                  className="px-6 py-2 rounded-full bg-rose-600 text-white font-semibold shadow hover:bg-rose-700 transition flex items-center gap-2 disabled:opacity-50"
                 >
-                  {formSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Bouquet'}
+                  {formSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Uploading Photos & Saving...</span>
+                    </>
+                  ) : (
+                    'Save Bouquet'
+                  )}
                 </button>
               </div>
 

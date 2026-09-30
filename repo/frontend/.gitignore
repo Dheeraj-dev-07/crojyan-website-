@@ -1,21 +1,31 @@
-# Ignore system-specific files
-.DS_Store
-Thumbs.db
+# Dependencies
+node_modules/
 
-# Ignore environment variables / secrets
+# Build outputs
+dist/
+dist-ssr/
+build/
+
+# Environment variables
 .env
-*.secret
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!*.env.example
 
-# Ignore log files and caches
+# Logs
 *.log
 npm-debug.log*
-.pytest_cache/
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Ignore dependency directories
-node_modules/
-venv/
-env/
+# Editor / IDE settings
+.vscode/
+.idea/
+*.swp
 
-# Ignore build outputs
-dist/
-build/
+# OS generated files
+.DS_Store
+Thumbs.db

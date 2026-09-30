@@ -275,10 +275,10 @@ export default function CheckoutPage() {
                         <Gift className="w-3 h-3" /> Note: "{item.selectedCustomization.giftCardText.slice(0, 30)}..."
                       </p>
                     )}
-                    <span className="text-stone-400">Qty: {item.quantity} x ${item.unitPrice.toFixed(2)}</span>
+                    <span className="text-stone-400">Qty: {item.quantity} x ₹{item.unitPrice}</span>
                   </div>
                   <span className="font-serif font-bold text-sm text-charcoal">
-                    ${(item.unitPrice * item.quantity).toFixed(2)}
+                    ₹{(item.unitPrice * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -287,7 +287,7 @@ export default function CheckoutPage() {
             <div className="pt-4 border-t border-stone-200 space-y-2 text-sm">
               <div className="flex justify-between text-stone-500">
                 <span>Items Subtotal</span>
-                <span>${cartTotal.toFixed(2)}</span>
+                <span>₹{cartTotal}</span>
               </div>
               <div className="flex justify-between text-stone-500">
                 <span>Handcrafting & Packing</span>
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between font-serif text-xl font-bold text-charcoal pt-2 border-t border-stone-100">
                 <span>Total Amount</span>
-                <span className="text-rose-600">${cartTotal.toFixed(2)}</span>
+                <span className="text-rose-600">₹{cartTotal}</span>
               </div>
             </div>
 

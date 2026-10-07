@@ -58,7 +58,7 @@ export default function Footer() {
               Studio & Socials
             </h3>
             <div className="space-y-3 text-sm text-stone-400">
-              <p>📍 Artisan Floral Studio</p>
+              <p>📍 Crojyan Online Store</p>
               <p>⏱️ Crafting Lead Time: 3–5 Days</p>
               <div className="pt-1">
                 <a

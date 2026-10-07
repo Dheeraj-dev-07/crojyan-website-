@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Flower2, Menu, X } from 'lucide-react';
+import { ShoppingBag, Flower2, Menu, X, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const { totalItemCount, setIsCartOpen } = useCart();
+  const { isAdminAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+  const isStorefrontPage = !location.pathname.startsWith('/admin');
 
   return (
     <header className="sticky top-0 z-40 glass-nav border-b border-stone-200/60 transition-all duration-300">
@@ -57,7 +60,20 @@ export default function Navbar() {
           </nav>
 
           {/* Action Icons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            
+            {/* Admin Profile Button - Rendered ONLY on Storefront when Admin Session is Active */}
+            {isStorefrontPage && isAdminAuthenticated && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-100 text-rose-800 text-xs font-semibold hover:bg-rose-600 hover:text-white transition-all shadow-xs border border-rose-200 group"
+                title="Go to Admin Dashboard"
+              >
+                <ShieldCheck className="w-4 h-4 text-rose-600 group-hover:text-white transition-colors" />
+                <span className="hidden sm:inline">Admin Profile</span>
+              </Link>
+            )}
+
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-2.5 rounded-full bg-white text-charcoal shadow-sm hover:shadow-md border border-stone-200 hover:border-rose-300 transition-all duration-200 flex items-center justify-center group"
@@ -101,6 +117,16 @@ export default function Navbar() {
           >
             Bouquet Catalog
           </Link>
+          {isStorefrontPage && isAdminAuthenticated && (
+            <Link
+              to="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-semibold text-rose-700 bg-rose-50 flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-rose-600" />
+              Admin Profile
+            </Link>
+          )}
         </div>
       )}
     </header>

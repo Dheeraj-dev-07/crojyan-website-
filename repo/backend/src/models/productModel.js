@@ -20,7 +20,8 @@ const imageSchema = new mongoose.Schema(
   {
     url: { type: String, required: true },
     public_id: { type: String, required: true },
-    isPrimary: { type: Boolean, default: false }
+    isPrimary: { type: Boolean, default: false },
+    order: { type: Number, default: 0 }
   },
   { _id: false }
 );

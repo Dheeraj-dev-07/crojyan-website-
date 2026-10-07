@@ -6,7 +6,7 @@ const validateRequest = (schema) => {
     try {
       // If req.body contains JSON string fields (e.g. multipart/form-data), parse them
       if (req.body && typeof req.body === 'object') {
-        ['dimensions', 'customization', 'variantDeltas'].forEach((field) => {
+        ['dimensions', 'customization', 'variantDeltas', 'removeImageIds', 'imagesOrder'].forEach((field) => {
           if (typeof req.body[field] === 'string') {
             try {
               req.body[field] = JSON.parse(req.body[field]);

@@ -16,5 +16,10 @@ module.exports = {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET
+  },
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder_key_id',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_placeholder_key_secret',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'rzp_test_placeholder_webhook_secret'
   }
 };

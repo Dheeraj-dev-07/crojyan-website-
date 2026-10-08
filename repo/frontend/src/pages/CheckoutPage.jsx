@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { apiRequest } from '../services/api';
-import { ShieldCheck, Truck, AlertTriangle, ArrowRight, Loader2, Ribbon, Gift } from 'lucide-react';
+import { createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { ShieldCheck, Truck, AlertTriangle, ArrowRight, Loader2, Ribbon, Gift, CreditCard } from 'lucide-react';
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -22,17 +36,29 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [staleCartItems, setStaleCartItems] = useState([]);
 
+  useEffect(() => {
+    // Preload Razorpay checkout script lazily
+    loadRazorpayScript();
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmitOrder = async (e) => {
+  const handleProceedToPayment = async (e) => {
     e.preventDefault();
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || submitting) return;
 
     setSubmitting(true);
     setErrorMessage(null);
     setStaleCartItems([]);
+
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      setErrorMessage('Failed to load Razorpay Payment Gateway SDK. Please check your internet connection and try again.');
+      setSubmitting(false);
+      return;
+    }
 
     const payload = {
       customer: {
@@ -47,36 +73,88 @@ export default function CheckoutPage() {
         }
       },
       items: cartItems.map((item) => ({
-        bouquetId: item.bouquetId,
+        productId: item.bouquetId || item._id,
+        quantity: item.quantity,
         selectedCustomization: {
           ribbonColor: item.selectedCustomization.ribbonColor,
           wrappingPaperShade: item.selectedCustomization.wrappingPaperShade,
           giftCardText: item.selectedCustomization.giftCardText || ''
-        },
-        quantity: item.quantity,
-        unitPrice: item.unitPrice
+        }
       }))
     };
 
     try {
-      const response = await apiRequest('/orders', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      // 1. Create order on server and get Razorpay order details + keyId
+      const response = await createPaymentOrder(payload);
 
-      if (response.success) {
-        clearCart();
-        navigate(`/order-success/${response.data.orderId}`, { state: { order: response.data } });
+      if (response && response.success) {
+        const { orderId, razorpayOrderId, amount, currency, keyId } = response.data;
+
+        // 2. Open Razorpay Checkout Modal
+        const options = {
+          key: keyId,
+          amount: amount,
+          currency: currency || 'INR',
+          name: 'Crojyan Crochet & Gift Shop',
+          description: `Order #${orderId}`,
+          image: '/favicon.ico',
+          order_id: razorpayOrderId,
+          prefill: {
+            name: formData.fullName,
+            email: formData.email,
+            contact: formData.phone
+          },
+          theme: {
+            color: '#E11D48'
+          },
+          handler: async function (paymentResponse) {
+            try {
+              // 3. Verify signature on backend
+              const verifyRes = await verifyPayment({
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_signature: paymentResponse.razorpay_signature
+              });
+
+              if (verifyRes && verifyRes.success) {
+                clearCart();
+                navigate(`/order-success/${verifyRes.data.orderId}`);
+              }
+            } catch (verifyErr) {
+              setErrorMessage(verifyErr.message || 'Payment verification failed. Please contact support.');
+            } finally {
+              setSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              // User closed modal without paying -> keep cart intact, no error shown
+              setSubmitting(false);
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+
+        rzp.on('payment.failed', function (resp) {
+          setSubmitting(false);
+          setErrorMessage(
+            resp.error?.description || 'Payment was unsuccessful. You can try again or use another payment method.'
+          );
+        });
+
+        rzp.open();
       }
     } catch (err) {
+      setSubmitting(false);
       if (err.code === 'ERR_STALE_CART_ITEM' && err.details) {
         setStaleCartItems(err.details);
         setErrorMessage(err.message || 'Cart contains stale pricing or unavailable items.');
+      } else if (err.code === 'ERR_INSUFFICIENT_STOCK') {
+        setErrorMessage(err.message || 'One or more items in your cart exceed available stock.');
       } else {
-        setErrorMessage(err.message || 'Failed to place order. Please try again.');
+        setErrorMessage(err.message || 'Failed to initiate payment order. Please try again.');
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -100,9 +178,9 @@ export default function CheckoutPage() {
       
       <div>
         <span className="text-xs font-semibold uppercase tracking-widest text-rose-600">
-          Guest Checkout
+          Secure Checkout
         </span>
-        <h1 className="font-serif text-3xl font-bold text-charcoal">Delivery & Order Review</h1>
+        <h1 className="font-serif text-3xl font-bold text-charcoal">Delivery & Payment Review</h1>
       </div>
 
       {/* ERR_STALE_CART_ITEM Inline Alert Banner */}
@@ -123,7 +201,7 @@ export default function CheckoutPage() {
                   <span className="text-stone-500">{stale.message}</span>
                 </div>
                 {stale.currentUnitPrice && (
-                  <span className="font-bold text-rose-600">${stale.currentUnitPrice.toFixed(2)}</span>
+                  <span className="font-bold text-rose-600">₹{stale.currentUnitPrice}</span>
                 )}
               </div>
             ))}
@@ -139,7 +217,18 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      {/* General Error Banner */}
+      {errorMessage && staleCartItems.length === 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-2xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage(null)} className="text-red-500 font-bold hover:text-red-700">Dismiss</button>
+        </div>
+      )}
+
+      <form onSubmit={handleProceedToPayment} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         
         {/* Customer Shipping Form */}
         <div className="lg:col-span-7 space-y-6">
@@ -171,7 +260,7 @@ export default function CheckoutPage() {
                   required
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210"
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 />
               </div>
@@ -212,7 +301,7 @@ export default function CheckoutPage() {
                   required
                   value={formData.city}
                   onChange={handleChange}
-                  placeholder="New York"
+                  placeholder="Indore"
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 />
               </div>
@@ -225,7 +314,7 @@ export default function CheckoutPage() {
                   required
                   value={formData.state}
                   onChange={handleChange}
-                  placeholder="NY"
+                  placeholder="MP"
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 />
               </div>
@@ -238,7 +327,7 @@ export default function CheckoutPage() {
                   required
                   value={formData.postalCode}
                   onChange={handleChange}
-                  placeholder="10001"
+                  placeholder="452001"
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 />
               </div>
@@ -246,16 +335,16 @@ export default function CheckoutPage() {
 
           </div>
 
-          <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-800 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <div className="p-4 rounded-xl bg-rose-50/80 border border-rose-200 text-xs text-rose-900 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-rose-600 flex-shrink-0" />
             <span>
-              <strong>Note:</strong> Order will be placed directly under <code className="bg-amber-100 px-1 rounded font-bold">PENDING_REVIEW</code> status for artisan review before crafting begins. No payment details required.
+              <strong>Secure Razorpay Payment:</strong> Encrypted payment via UPI, Credit/Debit Cards, Net Banking, and Wallet.
             </span>
           </div>
 
         </div>
 
-        {/* Order Summary & Submit Button */}
+        {/* Order Summary & Payment Action */}
         <div className="lg:col-span-5 space-y-6">
           
           <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
@@ -290,7 +379,7 @@ export default function CheckoutPage() {
                 <span>₹{cartTotal}</span>
               </div>
               <div className="flex justify-between text-stone-500">
-                <span>Handcrafting & Packing</span>
+                <span>Handcrafting & Delivery</span>
                 <span className="text-emerald-600 font-semibold">FREE</span>
               </div>
               <div className="flex justify-between font-serif text-xl font-bold text-charcoal pt-2 border-t border-stone-100">
@@ -302,15 +391,16 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-4 px-6 rounded-full bg-rose-600 text-white font-bold text-sm shadow-lg hover:bg-rose-700 transition flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 rounded-full bg-rose-600 text-white font-bold text-sm shadow-lg hover:bg-rose-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {submitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Placing Order...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Processing Payment...
                 </>
               ) : (
                 <>
-                  <span>Place Order (${cartTotal.toFixed(2)})</span>
+                  <CreditCard className="w-5 h-5" />
+                  <span>Pay Now (₹{cartTotal})</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

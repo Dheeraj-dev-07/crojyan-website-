@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 
 const ALLOWED_TRANSITIONS = {
+  AWAITING_PAYMENT: [],
+  PAYMENT_FAILED: [],
   PENDING_REVIEW: ['CONFIRMED', 'CANCELLED'],
   CONFIRMED: ['CRAFTING', 'CANCELLED'],
   CRAFTING: ['DISPATCHED', 'CANCELLED'],
@@ -88,7 +90,9 @@ export default function AdminDashboardPage() {
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
-      const url = orderStatusFilter ? `/orders?status=${orderStatusFilter}` : '/orders';
+      const url = orderStatusFilter
+        ? `/orders?status=${orderStatusFilter}&includePending=true`
+        : '/orders?includePending=true';
       const response = await apiRequest(url);
       if (response.success) {
         setOrders(response.data);
@@ -550,9 +554,14 @@ export default function AdminDashboardPage() {
                           
                           <td className="p-4 align-top">
                             <span className="font-mono font-bold text-rose-600 block">{order.orderId}</span>
-                            <span className="text-stone-400 text-[11px]">
+                            <span className="text-stone-400 text-[11px] block">
                               {new Date(order.createdAt).toLocaleDateString()}
                             </span>
+                            {order.razorpayPaymentId && (
+                              <span className="font-mono text-[10px] text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200 block mt-1 truncate max-w-[130px]" title={order.razorpayPaymentId}>
+                                Pay ID: {order.razorpayPaymentId}
+                              </span>
+                            )}
                           </td>
 
                           <td className="p-4 align-top space-y-1">
@@ -590,9 +599,21 @@ export default function AdminDashboardPage() {
                           </td>
 
                           <td className="p-4 align-top space-y-2">
-                            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                              {order.orderStatus}
-                            </span>
+                            <div className="space-y-1">
+                              <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                {order.orderStatus}
+                              </span>
+                              
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ml-1 ${
+                                order.paymentStatus === 'PAID'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                  : order.paymentStatus === 'FAILED' || order.paymentStatus === 'EXPIRED'
+                                  ? 'bg-red-100 text-red-800 border-red-200'
+                                  : 'bg-amber-100 text-amber-800 border-amber-200'
+                              }`}>
+                                {order.paymentStatus || 'CREATED'}
+                              </span>
+                            </div>
 
                             {allowedNext.length > 0 ? (
                               <select
@@ -610,7 +631,9 @@ export default function AdminDashboardPage() {
                               </select>
                             ) : (
                               <span className="block text-[11px] text-stone-400 font-semibold italic">
-                                Terminal State
+                                {order.orderStatus === 'AWAITING_PAYMENT' || order.orderStatus === 'PAYMENT_FAILED'
+                                  ? 'Locked System State'
+                                  : 'Terminal State'}
                               </span>
                             )}
                           </td>

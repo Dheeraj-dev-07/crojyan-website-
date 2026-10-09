@@ -1,15 +1,8 @@
 const mongoose = require('mongoose');
 const Order = require('../models/orderModel');
-const Product = require('../models/productModel');
 const AppError = require('../utils/AppError');
 const ERROR_CODES = require('../constants/errorCodes');
 const { ORDER_STATUSES, ALLOWED_ORDER_TRANSITIONS } = require('../constants/orderStatuses');
-
-const generateOrderId = () => {
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  return `BLOOM-${dateStr}-${randomSuffix}`;
-};
 
 const getOrders = async (queryFilters = {}) => {
   const { status, includePending, includeAll, page = 1, limit = 15 } = queryFilters;

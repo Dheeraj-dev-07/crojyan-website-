@@ -7,6 +7,7 @@ const path = require('path');
 const env = require('./config/env');
 const logger = require('./config/logger');
 const routes = require('./routes');
+const paymentController = require('./controllers/paymentController');
 const globalErrorHandler = require('./middleware/errorHandler');
 const AppError = require('./utils/AppError');
 const ERROR_CODES = require('./constants/errorCodes');
@@ -27,6 +28,13 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 };
 app.use(cors(corsOptions));
+
+// Razorpay Webhook mounted BEFORE express.json() to preserve raw body for HMAC signature verification
+app.post(
+  '/api/v1/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  paymentController.handleWebhook
+);
 
 // Body parsers & mongo sanitization against injection
 app.use(express.json({ limit: '10mb' }));

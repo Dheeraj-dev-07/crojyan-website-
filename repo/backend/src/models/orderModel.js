@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ORDER_STATUSES } = require('../constants/orderStatuses');
+const { ORDER_STATUSES, PAYMENT_STATUSES } = require('../constants/orderStatuses');
 
 /*
  * NOTE REGARDING SNAPSHOTS:
@@ -72,7 +72,23 @@ const orderSchema = new mongoose.Schema(
     orderStatus: {
       type: String,
       enum: Object.values(ORDER_STATUSES),
-      default: ORDER_STATUSES.PENDING_REVIEW
+      default: ORDER_STATUSES.AWAITING_PAYMENT
+    },
+    paymentStatus: {
+      type: String,
+      enum: Object.values(PAYMENT_STATUSES),
+      default: PAYMENT_STATUSES.CREATED
+    },
+    razorpayOrderId: {
+      type: String,
+      index: true,
+      sparse: true
+    },
+    razorpayPaymentId: {
+      type: String
+    },
+    paidAt: {
+      type: Date
     }
   },
   {

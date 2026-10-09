@@ -6,10 +6,18 @@ export default function ProductCard({ product }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  const sortedImages = product.images
+    ? [...product.images].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    : [];
+
+  const primaryImageObj =
+    sortedImages.find((img) => img.isPrimary) || sortedImages[0];
   const primaryImage =
-    product.images?.find((img) => img.isPrimary)?.url ||
-    product.images?.[0]?.url ||
-    'https://images.pexels.com/photos/19558765/pexels-photo-19558765.jpeg?_gl=1*8vpt2x*_ga*OTI3OTgwMjA0LjE3ODQ2Mzg4NDk.*_ga_8JE65Q40S6*czE3ODk2NTgzMTAkbzIkZzEkdDE3ODk2NTgzMTQkajU2JGwwJGgw';
+    primaryImageObj?.url ||
+    'https://images.pexels.com/photos/19558765/pexels-photo-19558765.jpeg';
+
+  const secondaryImageObj = sortedImages.find((img) => img !== primaryImageObj);
+  const secondaryImage = secondaryImageObj?.url;
 
   const getAvailabilityBadge = (status) => {
     switch (status) {
@@ -64,17 +72,27 @@ export default function ProductCard({ product }) {
             <span className="text-xs">Image unavailable</span>
           </div>
         ) : (
-          <img
-            src={primaryImage}
-            alt={product.title}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              setImageLoaded(true);
-              setImageError(true);
-            }}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-          />
+          <>
+            <img
+              src={primaryImage}
+              alt={product.title}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageLoaded(true);
+                setImageError(true);
+              }}
+              className={`w-full h-full object-cover transition-all duration-500 ${
+                secondaryImage ? 'group-hover:opacity-0 group-hover:scale-105' : 'group-hover:scale-105'
+              } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            />
+            {secondaryImage && (
+              <img
+                src={secondaryImage}
+                alt={`${product.title} alternate view`}
+                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 pointer-events-none"
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -99,7 +117,7 @@ export default function ProductCard({ product }) {
           <div>
             <span className="text-xs text-stone-400 block font-medium">Starting at</span>
             <span className="font-serif text-xl font-bold text-charcoal">
-              ${product.basePrice?.toFixed(2)}
+              ₹{product.basePrice}
             </span>
           </div>
 

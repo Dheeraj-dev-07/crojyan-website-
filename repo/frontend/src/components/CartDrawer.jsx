@@ -115,7 +115,7 @@ export default function CartDrawer() {
                       </div>
 
                       <span className="font-serif font-bold text-sm text-rose-600">
-                        ${(item.unitPrice * item.quantity).toFixed(2)}
+                        ₹{(item.unitPrice * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -139,7 +139,7 @@ export default function CartDrawer() {
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-500">
                   <span>Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>₹{cartTotal}</span>
                 </div>
                 <div className="flex justify-between text-stone-500 text-xs">
                   <span>Shipping & Delivery</span>
@@ -147,7 +147,7 @@ export default function CartDrawer() {
                 </div>
                 <div className="flex justify-between font-serif text-lg font-bold text-charcoal pt-2 border-t border-stone-100">
                   <span>Total</span>
-                  <span className="text-rose-600">${cartTotal.toFixed(2)}</span>
+                  <span className="text-rose-600">₹{cartTotal}</span>
                 </div>
               </div>
 

@@ -4,6 +4,8 @@ import { apiRequest } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { Sparkles, Layers, Clock, ShieldCheck, Heart, Ribbon, Gift, Plus, Minus, ArrowLeft, Loader2, Check } from 'lucide-react';
 
+import ProductGallery from '../components/ProductGallery';
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { addToCart } = useCart();
@@ -11,7 +13,6 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [selectedImage, setSelectedImage] = useState('');
   const [selectedRibbon, setSelectedRibbon] = useState('');
   const [selectedWrapper, setSelectedWrapper] = useState('');
   const [giftNote, setGiftNote] = useState('');
@@ -26,7 +27,6 @@ export default function ProductDetailPage() {
         if (response.success) {
           const p = response.data;
           setProduct(p);
-          setSelectedImage(p.images?.find((img) => img.isPrimary)?.url || p.images?.[0]?.url || '');
           setSelectedRibbon(p.customization?.ribbonColors?.[0] || 'Dusty Rose');
           setSelectedWrapper(p.customization?.wrappingPaperShades?.[0] || 'Cream Matte');
         }
@@ -95,35 +95,7 @@ export default function ProductDetailPage() {
 
         {/* Left Column: Multi-angle Image Gallery */}
         <div className="lg:col-span-6 space-y-4">
-
-          <div className="relative aspect-4/3 bg-white rounded-3xl overflow-hidden border border-stone-200 shadow-soft">
-            <img
-              src={selectedImage}
-              alt={product.title}
-              className="w-full h-full object-cover"
-            />
-            {product.availability === 'made_to_order' && (
-              <span className="absolute top-4 left-4 bg-amber-100/90 backdrop-blur-md text-amber-800 text-xs font-semibold px-3 py-1 rounded-full border border-amber-200">
-                Made to Order ({product.customization?.defaultLeadTimeDays || 3}d lead time)
-              </span>
-            )}
-          </div>
-
-          {/* Thumbnail list if multiple images exist */}
-          {product.images && product.images.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {product.images.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(img.url)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition ${selectedImage === img.url ? 'border-rose-600 scale-95 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'
-                    }`}
-                >
-                  <img src={img.url} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+          <ProductGallery images={product.images} productTitle={product.title} />
 
           {/* Product Specs Box */}
           <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-2xs space-y-4">
@@ -173,7 +145,7 @@ export default function ProductDetailPage() {
 
           <div className="flex items-baseline gap-3 pt-2 border-t border-stone-200">
             <span className="font-serif text-3xl font-bold text-rose-600">
-              ${product.basePrice?.toFixed(2)}
+              ₹{product.basePrice}
             </span>
             <span className="text-xs text-stone-400">Tax included</span>
           </div>

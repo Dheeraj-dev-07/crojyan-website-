@@ -12,7 +12,7 @@ router.get('/:id', productController.getProductById);
 router.post(
   '/',
   protectAdmin,
-  upload.array('images', 5),
+  upload.array('images', 8),
   validateRequest(createProductSchema),
   productController.createProduct
 );
@@ -20,7 +20,7 @@ router.post(
 router.put(
   '/:id',
   protectAdmin,
-  upload.array('images', 5),
+  upload.array('images', 8),
   validateRequest(updateProductSchema),
   productController.updateProduct
 );

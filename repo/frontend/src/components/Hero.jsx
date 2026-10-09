@@ -1,22 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight, HeartHandshake, ShieldCheck, Clock } from 'lucide-react';
-import heroBouquetImg from '../assets/hero-bouquet.jpg';
+import heroBouquetImg from '../assets/hero-bouquet1.jpeg';
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-rose-50/50 via-canvas to-canvas">
-      
+
       {/* Subtle Background Decorative Blur Circles */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-rose-200/30 blur-3xl rounded-full pointer-events-none -z-10" />
       <div className="absolute top-40 right-10 w-[300px] h-[300px] bg-emerald-100/40 blur-3xl rounded-full pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
+
           {/* Left Column: Value Prop & CTA */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            
+
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-100/80 border border-rose-200/80 text-rose-800 text-xs font-semibold tracking-wide uppercase shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-rose-600 animate-spin" />
               <span>Handcrafted Forever Flowers</span>
@@ -30,7 +30,7 @@ export default function Hero() {
             </h1>
 
             <p className="text-stone-600 text-lg sm:text-xl font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Celebrate life's timeless memories with handcrafted crochet flower bouquets designed to never wilt or fade. 
+              Celebrate life's timeless memories with handcrafted crochet flower bouquets designed to never wilt or fade.
               Based in Indore, we ship our artisan floral creations all over India.
             </p>
 
@@ -43,7 +43,7 @@ export default function Hero() {
                 <span>Explore Bouquets</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              
+
               <a
                 href="#craft"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full bg-white text-charcoal border border-stone-200 font-medium hover:border-rose-300 hover:bg-rose-50/50 transition-all duration-200"
@@ -81,7 +81,7 @@ export default function Hero() {
           {/* Right Column: Hero Visual Stack */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
-              
+
               {/* Main Bouquet Featured Image Card */}
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.02] transition-transform duration-500">
                 <img
@@ -89,7 +89,7 @@ export default function Hero() {
                   alt="Blush Rose Crochet Bouquet"
                   className="w-full h-[450px] object-cover"
                 />
-                
+
                 {/* Floating Studio Badge */}
                 <div className="absolute bottom-6 left-6 right-6 glass-panel rounded-2xl p-4 border border-white/60 shadow-lg">
                   <div className="flex items-center justify-between">
@@ -97,7 +97,7 @@ export default function Hero() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">Featured Arrangement</p>
                       <h3 className="font-serif text-lg font-bold text-charcoal">Blush Rose Bouquet</h3>
                     </div>
-                    <span className="text-xl font-bold text-rose-600 font-serif">₹1,499</span>
+                    <span className="text-xl font-bold text-rose-600 font-serif">Starting ₹1,000</span>
                   </div>
                 </div>
               </div>

@@ -21,7 +21,10 @@ const createProductSchema = z.object({
     defaultLeadTimeDays: z.coerce.number().int().min(1, 'Lead time must be at least 1 day').default(3)
   }),
   availability: z.enum(['available', 'made_to_order', 'sold_out']).default('available'),
-  stockCount: z.coerce.number().int().min(0, 'Stock count cannot be negative').optional().default(0)
+  stockCount: z.coerce.number().int().min(0, 'Stock count cannot be negative').optional().default(0),
+  removeImageIds: z.any().optional(),
+  primaryImageId: z.string().optional(),
+  imagesOrder: z.any().optional()
 });
 
 const updateProductSchema = createProductSchema.partial();

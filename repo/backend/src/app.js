@@ -22,8 +22,14 @@ app.use(
 );
 
 // CORS configuration
+const clientOrigin = env.clientUrl ? env.clientUrl.replace(/\/+$/, '') : 'http://localhost:5173';
+const allowedOrigins =
+  env.nodeEnv === 'production'
+    ? [clientOrigin, `${clientOrigin}/`]
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', clientOrigin, `${clientOrigin}/`];
+
 const corsOptions = {
-  origin: env.nodeEnv === 'production' ? env.clientUrl : ['http://localhost:5173', 'http://127.0.0.1:5173', env.clientUrl],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 };

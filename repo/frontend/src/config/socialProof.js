@@ -1,9 +1,9 @@
-import photo1 from '../assets/instagram/1.jpg';
-import photo2 from '../assets/instagram/2.jpg';
-import photo3 from '../assets/instagram/3.jpg';
-import photo4 from '../assets/instagram/4.jpg';
-import photo5 from '../assets/instagram/5.jpg';
-import photo6 from '../assets/instagram/6.jpg';
+import photo1 from '../assets/instagram/1.jpeg';
+import photo2 from '../assets/instagram/2.jpeg';
+import photo3 from '../assets/instagram/3.jpeg';
+import photo4 from '../assets/instagram/4.jpeg';
+import photo5 from '../assets/instagram/5.jpeg';
+import photo6 from '../assets/instagram/6.jpeg';
 
 export const INSTAGRAM_HANDLE = 'crojyan';
 export const INSTAGRAM_URL = 'https://www.instagram.com/crojyan';

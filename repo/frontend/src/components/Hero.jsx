@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight, HeartHandshake, ShieldCheck, Clock } from 'lucide-react';
-import heroBouquetImg from '../assets/hero-bouquet1.jpeg';
+import heroBouquetImg from '../assets/hero-bouquet.jpeg';
 
 export default function Hero() {
   return (

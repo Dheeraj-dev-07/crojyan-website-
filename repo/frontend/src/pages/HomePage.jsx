@@ -6,6 +6,8 @@ import ProductSkeleton from '../components/ProductSkeleton';
 import { apiRequest } from '../services/api';
 import { Flower2, Heart, Sparkles, ShieldCheck, ArrowRight, Scissors } from 'lucide-react';
 
+import SocialProofSection from '../components/SocialProofSection';
+
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +154,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Social Proof & Instagram Section */}
+      <SocialProofSection />
 
     </div>
   );

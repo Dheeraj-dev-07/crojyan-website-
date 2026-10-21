@@ -1,15 +1,19 @@
 {
   "name": "crochet-bouquet-backend",
   "version": "1.0.0",
-  "description": "Backend API for Bloom & Loop Crochet Bouquet E-Commerce MVP",
+  "description": "Backend API for Crojyan Crochet Bouquet E-Commerce Platform",
   "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node src/scripts/seed.js"
+    "seed": "node src/scripts/seed.js",
+    "seed:admin": "node scripts/seedAdmin.js"
   },
   "keywords": [],
-  "author": "Bloom & Loop",
+  "author": "Crojyan",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",

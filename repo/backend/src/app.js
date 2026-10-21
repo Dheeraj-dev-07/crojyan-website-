@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
 const path = require('path');
+const mongoose = require('mongoose');
 const env = require('./config/env');
 const logger = require('./config/logger');
 const routes = require('./routes');
@@ -14,6 +15,9 @@ const ERROR_CODES = require('./constants/errorCodes');
 
 const app = express();
 
+// Trust reverse proxy hops early in app setup (never boolean true)
+app.set('trust proxy', env.trustProxyHops);
+
 // Security Headers
 app.use(
   helmet({
@@ -22,14 +26,33 @@ app.use(
 );
 
 // CORS configuration
-const clientOrigin = env.clientUrl ? env.clientUrl.replace(/\/+$/, '') : 'http://localhost:5173';
+// Accept CLIENT_URL as one origin or a comma-separated list, normalize trailing slashes, and never allow wildcard in production
+const rawClientUrls = env.clientUrl ? env.clientUrl.split(',') : [];
+const normalizedOrigins = rawClientUrls
+  .map((url) => url.trim().replace(/\/+$/, ''))
+  .filter((url) => url.length > 0);
+
+const safeOrigins =
+  env.nodeEnv === 'production'
+    ? normalizedOrigins.filter((origin) => origin !== '*')
+    : (normalizedOrigins.length > 0 ? normalizedOrigins : ['http://localhost:5173']);
+
 const allowedOrigins =
   env.nodeEnv === 'production'
-    ? [clientOrigin, `${clientOrigin}/`]
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', clientOrigin, `${clientOrigin}/`];
+    ? safeOrigins
+    : Array.from(new Set([...safeOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173']));
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Requests with no Origin header (server-to-server, Razorpay webhooks, health checks, curl) must still work
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 };
@@ -59,12 +82,21 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // API Routes
 app.use('/api/v1', routes);
 
-// Health check endpoint
+// Health check endpoint (unauthenticated, excludes secrets and config, returns 503 when database is disconnected)
 app.get('/health', (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  if (!isDbConnected) {
+    return res.status(503).json({
+      status: 'DOWN',
+      database: 'disconnected',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   res.status(200).json({
     status: 'UP',
-    timestamp: new Date().toISOString(),
-    env: env.nodeEnv
+    database: 'connected',
+    timestamp: new Date().toISOString()
   });
 });
 

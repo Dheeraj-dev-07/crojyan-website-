@@ -97,7 +97,7 @@ export default function Hero() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">Featured Arrangement</p>
                       <h3 className="font-serif text-lg font-bold text-charcoal">Blush Rose Bouquet</h3>
                     </div>
-                    <span className="text-xl font-bold text-rose-600 font-serif">Starting ₹899</span>
+                    <span className="text-xl font-bold text-rose-600 font-serif">Starting ₹1,000</span>
                   </div>
                 </div>
               </div>

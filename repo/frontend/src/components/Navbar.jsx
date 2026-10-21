@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Flower2, Menu, X, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,18 +18,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-sm">
-              <Flower2 className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-charcoal group-hover:text-rose-600 transition-colors">
-                Crojyan
-              </span>
-              <span className="block text-[10px] uppercase tracking-widest text-stone-500 font-semibold -mt-1">
-                Crochet & Gift Shop
-              </span>
+          {/* Brand Logo inside a Borderless Circle with Reduced Margin */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm p-1 group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+              <img
+                src="/assets/logo-crojyan.png"
+                alt="Crojyan - Handmade with Love"
+                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+              />
             </div>
           </Link>
 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Flower2, Menu, X, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import logoImg from '../assets/brand/crojyan-logo.png';
 
 export default function Navbar() {
   const { totalItemCount, setIsCartOpen } = useCart();
@@ -19,18 +20,21 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-sm">
-              <Flower2 className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-charcoal group-hover:text-rose-600 transition-colors">
-                Crojyan
-              </span>
-              <span className="block text-[10px] uppercase tracking-widest text-stone-500 font-semibold -mt-1">
-                Crochet & Gift Shop
-              </span>
-            </div>
+          <Link
+            to="/"
+            className="flex items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 transition-transform duration-200 hover:scale-105"
+            aria-label="Crojyan - home"
+          >
+            <img
+              src={logoImg}
+              alt="Crojyan - Handmade with love"
+              width="64"
+              height="64"
+              loading="eager"
+              decoding="async"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover shadow-xs border border-stone-200/60"
+            />
+            <span className="sr-only">Crojyan</span>
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -52,8 +56,10 @@ export default function Navbar() {
               Bouquet Catalog
             </Link>
             <Link
-              to="/#craft"
-              className="transition-colors hover:text-rose-600"
+              to="/our-craft"
+              className={`transition-colors hover:text-rose-600 ${
+                isActive('/our-craft') ? 'text-rose-600 font-semibold' : ''
+              }`}
             >
               Our Craft
             </Link>
@@ -106,16 +112,29 @@ export default function Navbar() {
           <Link
             to="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-medium text-charcoal hover:bg-rose-50 hover:text-rose-600"
+            className={`block px-3 py-2 rounded-md text-base font-medium transition hover:bg-rose-50 hover:text-rose-600 ${
+              isActive('/') ? 'text-rose-600 font-semibold bg-rose-50/50' : 'text-charcoal'
+            }`}
           >
             Home
           </Link>
           <Link
             to="/shop"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md text-base font-medium text-charcoal hover:bg-rose-50 hover:text-rose-600"
+            className={`block px-3 py-2 rounded-md text-base font-medium transition hover:bg-rose-50 hover:text-rose-600 ${
+              isActive('/shop') ? 'text-rose-600 font-semibold bg-rose-50/50' : 'text-charcoal'
+            }`}
           >
             Bouquet Catalog
+          </Link>
+          <Link
+            to="/our-craft"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`block px-3 py-2 rounded-md text-base font-medium transition hover:bg-rose-50 hover:text-rose-600 ${
+              isActive('/our-craft') ? 'text-rose-600 font-semibold bg-rose-50/50' : 'text-charcoal'
+            }`}
+          >
+            Our Craft
           </Link>
           {isStorefrontPage && isAdminAuthenticated && (
             <Link

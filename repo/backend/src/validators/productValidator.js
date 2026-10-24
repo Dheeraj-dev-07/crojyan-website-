@@ -1,6 +1,6 @@
 const { z } = require('zod');
 
-const createProductSchema = z.object({
+const productSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters').max(100, 'Title cannot exceed 100 characters'),
   description: z.string().min(5, 'Description must be at least 5 characters'),
   category: z.enum(['bouquet', 'flower_pot', 'key_chain', 'other']).default('bouquet'),
@@ -11,14 +11,14 @@ const createProductSchema = z.object({
       priceDelta: z.coerce.number()
     })
   ).optional().default([]),
-  stemCount: z.coerce.number().int().positive('Stem count must be a positive integer'),
+  stemCount: z.coerce.number().int().positive('Stem count must be a positive integer').optional(),
   dimensions: z.object({
     heightCm: z.coerce.number().positive('Height in cm must be positive'),
     widthCm: z.coerce.number().positive('Width in cm must be positive')
   }),
   customization: z.object({
-    ribbonColors: z.array(z.string()).min(1, 'At least one ribbon color required'),
-    wrappingPaperShades: z.array(z.string()).min(1, 'At least one paper shade required'),
+    ribbonColors: z.array(z.string()).optional(),
+    wrappingPaperShades: z.array(z.string()).optional(),
     defaultLeadTimeDays: z.coerce.number().int().min(1, 'Lead time must be at least 1 day').default(3)
   }),
   availability: z.enum(['available', 'made_to_order', 'sold_out']).default('available'),
@@ -28,7 +28,17 @@ const createProductSchema = z.object({
   imagesOrder: z.any().optional()
 });
 
-const updateProductSchema = createProductSchema.partial();
+const createProductSchema = productSchema.superRefine((product, ctx) => {
+  if (product.category === 'bouquet' && product.stemCount === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['stemCount'],
+      message: 'Stem count is required for bouquets'
+    });
+  }
+});
+
+const updateProductSchema = productSchema.partial();
 
 module.exports = {
   createProductSchema,

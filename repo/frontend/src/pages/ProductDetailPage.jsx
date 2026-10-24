@@ -118,10 +118,12 @@ export default function ProductDetailPage() {
             </h3>
 
             <div className="grid grid-cols-2 gap-4 text-xs text-stone-600">
-              <div>
-                <span className="text-stone-400 block">Stem Count:</span>
-                <span className="font-semibold text-charcoal">{product.stemCount} Handcrafted Stems</span>
-              </div>
+              {product.category === 'bouquet' && (
+                <div>
+                  <span className="text-stone-400 block">Stem Count:</span>
+                  <span className="font-semibold text-charcoal">{product.stemCount} Handcrafted Stems</span>
+                </div>
+              )}
               <div>
                 <span className="text-stone-400 block">Dimensions:</span>
                 <span className="font-semibold text-charcoal">
@@ -222,7 +224,7 @@ export default function ProductDetailPage() {
                   'Currently Sold Out'
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" /> Add to Basket — ${(product.basePrice * quantity).toFixed(2)}
+                    Add to Basket — ₹{(product.basePrice * quantity).toFixed(2)}
                   </>
                 )}
               </button>

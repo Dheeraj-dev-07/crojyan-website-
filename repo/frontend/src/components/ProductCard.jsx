@@ -124,28 +124,28 @@ export default function ProductCard({ product }) {
         {/* Price and Action Button */}
         <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between">
           <div>
-            <span className="text-xs text-stone-400 block font-medium">Starting at</span>
+            {/* <span className="text-xs text-stone-400 block font-medium">Starting at</span> */}
             <span className="font-serif text-xl font-bold text-charcoal">
               ₹{product.basePrice}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Link
               to={`/products/${product._id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-rose-50 text-rose-700 font-semibold text-xs border border-rose-200 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600 transition-all duration-200"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full bg-rose-50 text-rose-700 font-semibold text-[10px] border border-rose-200 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600 transition-all duration-200"
             >
-              <span>{isBouquet ? 'Customize' : 'View Details'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>{isBouquet ? 'Customize' : 'View'}</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
             <button
               type="button"
               onClick={handleBuyNow}
               disabled={product.availability === 'sold_out'}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-rose-50 text-rose-700 font-semibold text-xs border border-rose-200 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600 transition-all duration-200 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 disabled:border-stone-300"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full bg-rose-50 text-rose-700 font-semibold text-[10px] border border-rose-200 group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600 transition-all duration-200 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:text-stone-500 disabled:border-stone-300"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Buy Now</span>
+              <ShoppingBag className="w-3 h-3" />
+              <span>Buy</span>
             </button>
           </div>
         </div>

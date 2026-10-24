@@ -57,7 +57,7 @@ const productSchema = new mongoose.Schema(
     variantDeltas: [variantDeltaSchema],
     stemCount: {
       type: Number,
-      required: [true, 'Stem count is required'],
+      required: function () { return this.category === 'bouquet'; },
       min: [1, 'Stem count must be at least 1']
     },
     dimensions: {

@@ -24,11 +24,11 @@ export default function Navbar() {
           
           {/* Brand Logo inside a Borderless Circle with Reduced Margin */}
           <Link to="/" onClick={handleHomeClick} className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm p-1 group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+            <div className="w-14 h-14 shrink-0 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
               <img
                 src="/assets/logo-crojyan.png"
                 alt="Crojyan - Handmade with Love"
-                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                className="w-[135%] h-[135%] max-w-none object-contain group-hover:scale-110 transition-transform duration-300"
               />
             </div>
           </Link>

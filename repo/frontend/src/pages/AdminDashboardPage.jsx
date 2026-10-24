@@ -80,8 +80,6 @@ export default function AdminDashboardPage() {
     stemCount: '',
     heightCm: '',
     widthCm: '',
-    ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
-    wrappingPaperShades: 'Cream Matte, Kraft Vintage, Blush Pink',
     defaultLeadTimeDays: '3',
     availability: 'available',
     stockCount: '10'
@@ -332,11 +330,9 @@ export default function AdminDashboardPage() {
         description: product.description,
         category: product.category || 'bouquet',
         basePrice: product.basePrice.toString(),
-        stemCount: product.stemCount.toString(),
+        stemCount: product.stemCount?.toString() || '',
         heightCm: product.dimensions?.heightCm?.toString() || '35',
         widthCm: product.dimensions?.widthCm?.toString() || '25',
-        ribbonColors: product.customization?.ribbonColors?.join(', ') || '',
-        wrappingPaperShades: product.customization?.wrappingPaperShades?.join(', ') || '',
         defaultLeadTimeDays: product.customization?.defaultLeadTimeDays?.toString() || '3',
         availability: product.availability,
         stockCount: product.stockCount?.toString() || '0'
@@ -366,8 +362,6 @@ export default function AdminDashboardPage() {
         stemCount: '7',
         heightCm: '35',
         widthCm: '25',
-        ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
-        wrappingPaperShades: 'Cream Matte, Kraft Vintage, Blush Pink',
         defaultLeadTimeDays: '3',
         availability: 'available',
         stockCount: '10'
@@ -407,7 +401,9 @@ export default function AdminDashboardPage() {
     formData.append('description', productForm.description);
     formData.append('category', productForm.category);
     formData.append('basePrice', productForm.basePrice);
-    formData.append('stemCount', productForm.stemCount);
+    if (productForm.category === 'bouquet') {
+      formData.append('stemCount', productForm.stemCount);
+    }
 
     formData.append(
       'dimensions',
@@ -417,14 +413,9 @@ export default function AdminDashboardPage() {
       })
     );
 
-    const ribbonList = productForm.ribbonColors.split(',').map((s) => s.trim()).filter(Boolean);
-    const wrapperList = productForm.wrappingPaperShades.split(',').map((s) => s.trim()).filter(Boolean);
-
     formData.append(
       'customization',
       JSON.stringify({
-        ribbonColors: ribbonList,
-        wrappingPaperShades: wrapperList,
         defaultLeadTimeDays: Number(productForm.defaultLeadTimeDays)
       })
     );
@@ -839,7 +830,7 @@ export default function AdminDashboardPage() {
                         <div>
                           <h3 className="font-serif font-bold text-base text-charcoal line-clamp-1">{product.title}</h3>
                           <span className="font-serif font-bold text-rose-600 text-sm">₹{product.basePrice}</span>
-                          <div className="text-[11px] text-stone-500">{product.stemCount} Stems • Stock: {product.stockCount}</div>
+                          <div className="text-[11px] text-stone-500">{product.category === 'bouquet' ? `${product.stemCount} Stems • ` : ''}Stock: {product.stockCount}</div>
                         </div>
                       </div>
                       <p className="text-xs text-stone-500 line-clamp-2">{product.description}</p>
@@ -883,7 +874,7 @@ export default function AdminDashboardPage() {
             
             <div className="flex items-center justify-between border-b border-stone-200 pb-4">
               <h3 className="font-serif text-xl font-bold text-charcoal">
-                {editingProduct ? 'Edit Bouquet Specifications' : 'Add New Handcrafted Bouquet'}
+                {editingProduct ? 'Edit Bouquet Specifications' : 'Add New Handcrafted Crochet Products'}
               </h3>
               <button onClick={closeProductModal} className="text-stone-400 hover:text-stone-600">
                 <X className="w-6 h-6" />
@@ -914,7 +905,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-charcoal mb-1">Bouquet Title</label>
+                <label className="block font-bold text-charcoal mb-1">Title</label>
                 <input
                   type="text"
                   required
@@ -950,16 +941,18 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Stem Count</label>
-                  <input
-                    type="number"
-                    required
-                    value={productForm.stemCount}
-                    onChange={(e) => setProductForm({ ...productForm, stemCount: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
+                {productForm.category === 'bouquet' && (
+                  <div>
+                    <label className="block font-bold text-charcoal mb-1">Stem Count</label>
+                    <input
+                      type="number"
+                      required
+                      value={productForm.stemCount}
+                      onChange={(e) => setProductForm({ ...productForm, stemCount: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block font-bold text-charcoal mb-1">Stock Count</label>
@@ -1008,30 +1001,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Ribbon Shades (Comma Separated)</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.ribbonColors}
-                    onChange={(e) => setProductForm({ ...productForm, ribbonColors: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Wrapping Paper Shades (Comma Separated)</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.wrappingPaperShades}
-                    onChange={(e) => setProductForm({ ...productForm, wrappingPaperShades: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="block font-bold text-charcoal mb-1">Availability Status</label>
                 <select
@@ -1049,7 +1018,8 @@ export default function AdminDashboardPage() {
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-charcoal">
-                    Bouquet Multi-Photo Gallery (1–8 Photos • Max 5MB each)
+                    Product's
+                     Multi-Photo Gallery (1–8 Photos • Max 5MB each)
                   </label>
                   <span className="text-[11px] font-semibold text-stone-500">
                     {imageItems.length} / 8 photos selected
@@ -1170,7 +1140,7 @@ export default function AdminDashboardPage() {
                       Click to select multiple photos
                     </label>
                     <p className="text-[10px] text-stone-400 mt-1">
-                      Drag & drop bouquet images here (JPEG, PNG, WebP up to 5MB)
+                      Drag & drop product images here (JPEG, PNG, WebP up to 5MB)
                     </p>
                   </div>
                 )}
@@ -1197,7 +1167,7 @@ export default function AdminDashboardPage() {
                       <span>Uploading Photos & Saving...</span>
                     </>
                   ) : (
-                    'Save Bouquet'
+                    'Save Product'
                   )}
                 </button>
               </div>

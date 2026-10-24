@@ -109,7 +109,7 @@ export default function ProductGallery({ images = [], productTitle = 'Bouquet' }
 
   if (sortedImages.length === 0) {
     return (
-      <div className="aspect-4/3 bg-stone-100 rounded-3xl flex items-center justify-center text-stone-400 text-sm">
+      <div className="aspect-square bg-stone-100 rounded-3xl flex items-center justify-center text-stone-400 text-sm">
         No images available
       </div>
     );
@@ -122,7 +122,7 @@ export default function ProductGallery({ images = [], productTitle = 'Bouquet' }
   return (
     <div className="space-y-4">
       {/* Large Main Display Card */}
-      <div className="relative aspect-4/3 bg-white rounded-3xl overflow-hidden border border-stone-200 shadow-soft group">
+      <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-stone-200 shadow-soft group">
         <img
           src={mainPdpUrl}
           alt={`${productTitle} — photo ${activeIndex + 1}`}

@@ -21,9 +21,16 @@ const sortAndNormalizeImages = (images = []) => {
 };
 
 const getAllProducts = async (queryFilters = {}) => {
-  const { availability, priceMin, priceMax, page = 1, limit = 12 } = queryFilters;
+  const { category, availability, priceMin, priceMax, page = 1, limit = 12 } = queryFilters;
 
   const filterCriteria = {};
+
+  if (category === 'bouquet') {
+    // Older catalog records predate categories and are treated as bouquets.
+    filterCriteria.$or = [{ category: 'bouquet' }, { category: { $exists: false } }];
+  } else if (category) {
+    filterCriteria.category = category;
+  }
 
   if (availability) {
     filterCriteria.availability = availability;
@@ -265,3 +272,4 @@ module.exports = {
   updateProduct,
   deleteProduct
 };
+

@@ -3,6 +3,7 @@ const { z } = require('zod');
 const createProductSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters').max(100, 'Title cannot exceed 100 characters'),
   description: z.string().min(5, 'Description must be at least 5 characters'),
+  category: z.enum(['bouquet', 'flower_pot', 'key_chain', 'other']).default('bouquet'),
   basePrice: z.coerce.number().positive('Base price must be positive'),
   variantDeltas: z.array(
     z.object({

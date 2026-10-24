@@ -79,7 +79,7 @@ export default function OrderSuccessPage() {
                   </div>
                   <div className="text-stone-500 flex items-center gap-2">
                     <Ribbon className="w-3 h-3 text-rose-400" />
-                    <span>Ribbon: {item.selectedCustomization?.ribbonColor} | Wrapper: {item.selectedCustomization?.wrappingPaperShade}</span>
+                    <span>Flower color: {item.selectedCustomization?.ribbonColor}</span>
                   </div>
                   {item.selectedCustomization?.giftCardText && (
                     <div className="p-2 bg-rose-50/70 rounded-lg text-rose-800 italic flex items-start gap-1 mt-1">

@@ -21,7 +21,8 @@ import {
   GripVertical,
   MoveLeft,
   MoveRight,
-  Image as ImageIcon
+  Image as ImageIcon,
+  BarChart3
 } from 'lucide-react';
 
 const ALLOWED_TRANSITIONS = {
@@ -46,17 +47,24 @@ const cleanupBlobUrls = (items) => {
 
 export default function AdminDashboardPage() {
   const { admin, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products' | 'sales'
 
   // Orders State
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
+  const [totalOrders, setTotalOrders] = useState(0);
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [salesRange, setSalesRange] = useState('30d');
+  const [salesSummary, setSalesSummary] = useState(null);
+  const [loadingSales, setLoadingSales] = useState(false);
+  const [salesError, setSalesError] = useState('');
 
   // Products State
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productCategoryFilter, setProductCategoryFilter] = useState('');
 
   // Product Modal Form State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -67,6 +75,7 @@ export default function AdminDashboardPage() {
   const [productForm, setProductForm] = useState({
     title: '',
     description: '',
+    category: 'bouquet',
     basePrice: '',
     stemCount: '',
     heightCm: '',
@@ -89,16 +98,27 @@ export default function AdminDashboardPage() {
   // Fetch Orders
   const fetchOrders = async () => {
     setLoadingOrders(true);
+    setOrdersError('');
     try {
-      const url = orderStatusFilter
-        ? `/orders?status=${orderStatusFilter}&includePending=true`
-        : '/orders?includePending=true';
-      const response = await apiRequest(url);
-      if (response.success) {
-        setOrders(response.data);
-      }
+      const allOrders = [];
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const params = new URLSearchParams({ includePending: 'true', page: String(page), limit: '100' });
+        if (orderStatusFilter) params.set('status', orderStatusFilter);
+        const response = await apiRequest(`/orders?${params.toString()}`);
+        if (!response.success) throw new Error('The order list could not be loaded.');
+        allOrders.push(...(response.data || []));
+        totalPages = Math.max(1, response.meta?.totalPages || 1);
+        page += 1;
+      } while (page <= totalPages);
+
+      setOrders(allOrders);
+      setTotalOrders(allOrders.length);
     } catch (err) {
       console.error('Failed to load admin orders', err);
+      setOrdersError(err.message || 'Failed to load customer orders.');
     } finally {
       setLoadingOrders(false);
     }
@@ -119,10 +139,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchSales = async () => {
+    setLoadingSales(true);
+    setSalesError('');
+    try {
+      const response = await apiRequest(`/orders/sales?range=${salesRange}`);
+      if (!response.success) throw new Error('The sales summary could not be loaded.');
+      setSalesSummary(response.data);
+    } catch (err) {
+      console.error('Failed to load sales summary', err);
+      setSalesError(err.message || 'Failed to load sales summary.');
+    } finally {
+      setLoadingSales(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'products') fetchProducts();
-  }, [activeTab, orderStatusFilter]);
+    if (activeTab === 'sales') fetchSales();
+  }, [activeTab, orderStatusFilter, salesRange]);
 
   // Handle Order Status Patch with Transition Guard
   const handleStatusChange = async (orderId, newStatus) => {
@@ -133,9 +169,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({ status: newStatus })
       });
       if (response.success) {
-        setOrders((prev) =>
-          prev.map((o) => (o._id === orderId ? { ...o, orderStatus: newStatus } : o))
-        );
+        await fetchOrders();
       }
     } catch (err) {
       alert(`Status update rejected: ${err.message}`);
@@ -296,6 +330,7 @@ export default function AdminDashboardPage() {
       setProductForm({
         title: product.title,
         description: product.description,
+        category: product.category || 'bouquet',
         basePrice: product.basePrice.toString(),
         stemCount: product.stemCount.toString(),
         heightCm: product.dimensions?.heightCm?.toString() || '35',
@@ -326,6 +361,7 @@ export default function AdminDashboardPage() {
       setProductForm({
         title: '',
         description: '',
+        category: 'bouquet',
         basePrice: '45.00',
         stemCount: '7',
         heightCm: '35',
@@ -369,6 +405,7 @@ export default function AdminDashboardPage() {
     const formData = new FormData();
     formData.append('title', productForm.title);
     formData.append('description', productForm.description);
+    formData.append('category', productForm.category);
     formData.append('basePrice', productForm.basePrice);
     formData.append('stemCount', productForm.stemCount);
 
@@ -485,7 +522,7 @@ export default function AdminDashboardPage() {
               : 'border-transparent text-stone-400 hover:text-stone-600'
           }`}
         >
-          <ShoppingBag className="w-5 h-5" /> Order Tracker ({orders.length})
+          <ShoppingBag className="w-5 h-5" /> Order Tracker ({totalOrders})
         </button>
 
         <button
@@ -498,7 +535,100 @@ export default function AdminDashboardPage() {
         >
           <Package className="w-5 h-5" /> Bouquet Catalog ({products.length})
         </button>
+        <button
+          onClick={() => setActiveTab('sales')}
+          className={`pb-4 px-2 font-serif font-bold text-base flex items-center gap-2 border-b-2 transition ${
+            activeTab === 'sales'
+              ? 'border-rose-600 text-rose-600'
+              : 'border-transparent text-stone-400 hover:text-stone-600'
+          }`}
+        >
+          <BarChart3 className="w-5 h-5" /> Sales
+        </button>
       </div>
+
+      {/* SALES TAB */}
+      {activeTab === 'sales' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h2 className="font-serif text-xl font-bold text-charcoal">Sales Overview</h2>
+              <p className="text-xs text-stone-500 mt-1">Revenue from successfully paid orders</p>
+            </div>
+            <div className="flex gap-2" aria-label="Sales chart date range">
+              {[['7d', '7 days'], ['30d', '30 days'], ['12m', '12 months']].map(([range, label]) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => setSalesRange(range)}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold ${salesRange === range ? 'bg-rose-600 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loadingSales ? (
+            <div className="py-20 text-center text-stone-400">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-600 mb-2" />
+              <span>Loading sales...</span>
+            </div>
+          ) : salesError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+              {salesError}
+            </div>
+          ) : salesSummary && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  ['Paid Revenue', `₹${salesSummary.revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
+                  ['Paid Orders', salesSummary.orderCount.toLocaleString('en-IN')],
+                  ['Average Order', `₹${salesSummary.averageOrderValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`]
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-soft">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+                    <p className="mt-2 font-serif text-2xl font-bold text-charcoal">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <section className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-7 shadow-soft">
+                <div className="flex items-start justify-between gap-3 mb-7">
+                  <div>
+                    <h3 className="font-serif font-bold text-charcoal">Revenue over time</h3>
+                    <p className="text-xs text-stone-500 mt-1">Each bar shows paid sales for that period</p>
+                  </div>
+                  <span className="text-xs font-semibold text-rose-600">INR</span>
+                </div>
+                {salesSummary.buckets.length > 0 && Math.max(...salesSummary.buckets.map((bucket) => bucket.revenue)) > 0 ? (
+                  <div className="h-64 flex items-end gap-1 sm:gap-2 border-b border-stone-200 pb-2" role="img" aria-label={`Sales chart for ${salesRange}`}>
+                    {salesSummary.buckets.map((bucket, index) => {
+                      const maxRevenue = Math.max(...salesSummary.buckets.map((item) => item.revenue));
+                      const height = bucket.revenue ? Math.max(4, (bucket.revenue / maxRevenue) * 100) : 0;
+                      const label = salesRange === '12m'
+                        ? new Date(`${bucket.date}-01T00:00:00Z`).toLocaleDateString('en-IN', { month: 'short', year: '2-digit', timeZone: 'UTC' })
+                        : new Date(`${bucket.date}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+                      const showLabel = salesRange === '12m' || salesRange === '7d' || index % 5 === 0 || index === salesSummary.buckets.length - 1;
+                      return (
+                        <div key={bucket.date} className="group relative flex h-full min-w-0 flex-1 flex-col justify-end items-center">
+                          <div className="absolute bottom-full mb-2 hidden group-hover:block whitespace-nowrap rounded-lg bg-charcoal px-2 py-1 text-[10px] text-white shadow-lg z-10">
+                            {label}: ₹{bucket.revenue.toLocaleString('en-IN')} · {bucket.orderCount} orders
+                          </div>
+                          <div className="w-full max-w-8 rounded-t-md bg-rose-400 transition-colors group-hover:bg-rose-600" style={{ height: `${height}%` }} />
+                          <span className="absolute top-full mt-2 text-[9px] sm:text-[10px] text-stone-500 whitespace-nowrap">{showLabel ? label : ''}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-sm text-stone-400">No paid sales in this period yet.</div>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ORDERS TAB */}
       {activeTab === 'orders' && (
@@ -507,7 +637,7 @@ export default function AdminDashboardPage() {
           {/* Order Status Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-stone-500 uppercase tracking-wider mr-2">Status Filter:</span>
-            {['', 'PENDING_REVIEW', 'CONFIRMED', 'CRAFTING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'].map((st) => (
+            {['', 'AWAITING_PAYMENT', 'PAYMENT_FAILED', 'PENDING_REVIEW', 'CONFIRMED', 'CRAFTING', 'DISPATCHED', 'DELIVERED', 'CANCELLED'].map((st) => (
               <button
                 key={st}
                 onClick={() => setOrderStatusFilter(st)}
@@ -527,6 +657,10 @@ export default function AdminDashboardPage() {
               <Loader2 className="w-8 h-8 animate-spin mx-auto text-rose-600 mb-2" />
               <span>Loading customer orders...</span>
             </div>
+          ) : ordersError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+              {ordersError}
+            </div>
           ) : orders.length === 0 ? (
             <div className="bg-white p-12 rounded-2xl border border-stone-200 text-center space-y-2">
               <ShoppingBag className="w-10 h-10 text-stone-300 mx-auto" />
@@ -543,7 +677,7 @@ export default function AdminDashboardPage() {
                       <th className="p-4">Customer Details</th>
                       <th className="p-4">Bouquets & Customization</th>
                       <th className="p-4">Total</th>
-                      <th className="p-4">Status & Allowed Transitions</th>
+                      <th className="p-4">Order & Payment Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100 text-xs">
@@ -582,7 +716,7 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="text-[11px] text-stone-500 flex items-center gap-1">
                                   <Ribbon className="w-3 h-3 text-rose-500" />
-                                  <span>Ribbon: {item.selectedCustomization?.ribbonColor} | Wrapper: {item.selectedCustomization?.wrappingPaperShade}</span>
+                                  <span>Flower color: {item.selectedCustomization?.ribbonColor}</span>
                                 </div>
                                 {item.selectedCustomization?.giftCardText && (
                                   <div className="text-[11px] text-rose-700 italic flex items-center gap-1">
@@ -655,13 +789,26 @@ export default function AdminDashboardPage() {
         <div className="space-y-6">
           
           <div className="flex justify-between items-center">
-            <h2 className="font-serif text-xl font-bold text-charcoal">Bouquet Inventory</h2>
+            <h2 className="font-serif text-xl font-bold text-charcoal">Catalog Inventory</h2>
             <button
               onClick={() => openProductModal()}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rose-600 text-white font-semibold text-xs shadow-md hover:bg-rose-700 transition"
             >
-              <Plus className="w-4 h-4" /> Add New Bouquet
+              <Plus className="w-4 h-4" /> Add Product
             </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2" aria-label="Filter inventory by category">
+            {[['', 'All Items'], ['bouquet', 'Bouquets'], ['flower_pot', 'Flower Pots'], ['key_chain', 'Key Chains'], ['other', 'Other Items']].map(([value, label]) => (
+              <button
+                key={value || 'all'}
+                type="button"
+                onClick={() => setProductCategoryFilter(value)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition ${productCategoryFilter === value ? 'bg-rose-600 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {loadingProducts ? (
@@ -671,7 +818,7 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => {
+              {products.filter((product) => !productCategoryFilter || (product.category || 'bouquet') === productCategoryFilter).map((product) => {
                 const primaryImg = product.images?.find((img) => img.isPrimary)?.url || product.images?.[0]?.url || 'https://images.unsplash.com/photo-1563245372-f21724e3856d';
                 return (
                   <div key={product._id} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-soft flex flex-col justify-between space-y-4">
@@ -699,9 +846,10 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">
-                        {product.availability}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="text-[10px] font-bold uppercase text-rose-600">{{ bouquet: 'Bouquet', flower_pot: 'Flower Pot', key_chain: 'Key Chain', other: 'Other' }[product.category || 'bouquet']}</span>
+                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">{product.availability}</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => openProductModal(product)}
@@ -751,6 +899,20 @@ export default function AdminDashboardPage() {
 
             <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
               
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Category</label>
+                <select
+                  value={productForm.category}
+                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white"
+                >
+                  <option value="bouquet">Bouquet</option>
+                  <option value="flower_pot">Flower Pot</option>
+                  <option value="key_chain">Key Chain</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block font-bold text-charcoal mb-1">Bouquet Title</label>
                 <input

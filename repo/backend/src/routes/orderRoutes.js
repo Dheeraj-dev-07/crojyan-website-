@@ -6,6 +6,7 @@ const validateRequest = require('../middleware/validateMiddleware');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
 router.get('/', protectAdmin, orderController.getOrders);
+router.get('/sales', protectAdmin, orderController.getSalesSummary);
 router.get('/:id', protectAdmin, orderController.getOrderById);
 router.patch('/:id/status', protectAdmin, validateRequest(updateOrderStatusSchema), orderController.updateOrderStatus);
 

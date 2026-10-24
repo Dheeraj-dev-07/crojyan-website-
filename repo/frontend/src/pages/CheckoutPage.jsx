@@ -357,7 +357,7 @@ export default function CheckoutPage() {
                   <div className="flex-grow text-xs space-y-0.5">
                     <h4 className="font-serif font-bold text-charcoal">{item.title}</h4>
                     <p className="text-stone-500 flex items-center gap-1">
-                      <Ribbon className="w-3 h-3 text-rose-500" /> {item.selectedCustomization.ribbonColor}
+                      <Ribbon className="w-3 h-3 text-rose-500" /> Flower color: {item.selectedCustomization.ribbonColor}
                     </p>
                     {item.selectedCustomization.giftCardText && (
                       <p className="text-rose-600 font-medium flex items-center gap-1">

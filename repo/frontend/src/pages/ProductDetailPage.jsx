@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import { useCart } from '../context/CartContext';
-import { Sparkles, Layers, Clock, ShieldCheck, Heart, Ribbon, Gift, Plus, Minus, ArrowLeft, Loader2, Check } from 'lucide-react';
+import { Sparkles, Clock, ShieldCheck, Heart, Gift, Plus, Minus, ArrowLeft, Loader2, Check } from 'lucide-react';
 
 import ProductGallery from '../components/ProductGallery';
 
@@ -27,7 +27,7 @@ export default function ProductDetailPage() {
         if (response.success) {
           const p = response.data;
           setProduct(p);
-          setSelectedRibbon(p.customization?.ribbonColors?.[0] || 'Dusty Rose');
+          setSelectedRibbon('');
           setSelectedWrapper(p.customization?.wrappingPaperShades?.[0] || 'Cream Matte');
         }
       } catch (err) {
@@ -45,9 +45,9 @@ export default function ProductDetailPage() {
     addToCart(
       product,
       {
-        ribbonColor: selectedRibbon,
-        wrappingPaperShade: selectedWrapper,
-        giftCardText: giftNote
+        ribbonColor: isBouquet ? selectedRibbon : '',
+        wrappingPaperShade: isBouquet ? selectedWrapper : '',
+        giftCardText: isBouquet ? giftNote : ''
       },
       quantity
     );
@@ -79,6 +79,8 @@ export default function ProductDetailPage() {
   }
 
   const isSoldOut = product.availability === 'sold_out';
+  // Older catalog records may not include a category; those are bouquets by default.
+  const isBouquet = !product.category || product.category === 'bouquet';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
@@ -88,19 +90,31 @@ export default function ProductDetailPage() {
         to="/shop"
         className="inline-flex items-center gap-2 text-stone-500 hover:text-rose-600 text-xs font-semibold transition"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Bouquet Catalog
+        <ArrowLeft className="w-4 h-4" /> Back to Catalog
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-        {/* Left Column: Multi-angle Image Gallery */}
-        <div className="lg:col-span-6 space-y-4">
-          <ProductGallery images={product.images} productTitle={product.title} />
+        {/* Product details stay in the left column while the gallery remains fixed beside them. */}
+        <div className="order-2 lg:order-2 lg:col-span-6 lg:col-start-7 space-y-6">
+
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-600 mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              Forever Crochet Collection
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
+              {product.title}
+            </h1>
+            <p className="text-stone-500 text-sm mt-3 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
 
           {/* Product Specs Box */}
           <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-2xs space-y-4">
             <h3 className="font-serif font-bold text-sm text-charcoal flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-rose-500" /> Bouquet Specifications
+              <Sparkles className="w-4 h-4 text-rose-500" /> Product Specifications
             </h3>
 
             <div className="grid grid-cols-2 gap-4 text-xs text-stone-600">
@@ -125,24 +139,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-        </div>
-
-        {/* Right Column: Title, Customization & Add to Cart */}
-        <div className="lg:col-span-6 space-y-6">
-
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-600 mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Forever Crochet Collection
-            </div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-              {product.title}
-            </h1>
-            <p className="text-stone-500 text-sm mt-3 leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-
           <div className="flex items-baseline gap-3 pt-2 border-t border-stone-200">
             <span className="font-serif text-3xl font-bold text-rose-600">
               ₹{product.basePrice}
@@ -150,50 +146,22 @@ export default function ProductDetailPage() {
             <span className="text-xs text-stone-400">Tax included</span>
           </div>
 
-          {/* Customization Section */}
-          <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-5">
+          {/* Bouquet options apply to bouquet products only. */}
+          {isBouquet && <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-5">
 
-            {/* Ribbon Color Dropdown */}
-            {product.customization?.ribbonColors?.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-charcoal flex items-center gap-1.5">
-                  <Ribbon className="w-4 h-4 text-rose-500" />
-                  Select Satin Ribbon Shade
-                </label>
-                <select
-                  value={selectedRibbon}
-                  onChange={(e) => setSelectedRibbon(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                >
-                  {product.customization.ribbonColors.map((ribbon) => (
-                    <option key={ribbon} value={ribbon}>
-                      {ribbon} Ribbon
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Wrapping Paper Shade Dropdown */}
-            {product.customization?.wrappingPaperShades?.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-charcoal flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-rose-500" />
-                  Select Parchment Wrapping Paper
-                </label>
-                <select
-                  value={selectedWrapper}
-                  onChange={(e) => setSelectedWrapper(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                >
-                  {product.customization.wrappingPaperShades.map((shade) => (
-                    <option key={shade} value={shade}>
-                      {shade} Wrapping
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* Free-text flower color preference */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-charcoal">
+                Flower Color
+              </label>
+              <input
+                type="text"
+                value={selectedRibbon}
+                onChange={(e) => setSelectedRibbon(e.target.value)}
+                placeholder="Enter your preferred flower color"
+                className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+              />
+            </div>
 
             {/* Handwritten Gift Card Textarea */}
             <div className="space-y-2">
@@ -214,7 +182,7 @@ export default function ProductDetailPage() {
               />
             </div>
 
-          </div>
+          </div>}
 
           {/* Quantity & Add to Cart Controls */}
           <div className="space-y-4 pt-2">
@@ -271,6 +239,11 @@ export default function ProductDetailPage() {
 
           </div>
 
+        </div>
+
+        {/* Square sticky product gallery on the left while the details remain alongside it. */}
+        <div className="order-1 lg:order-1 lg:col-span-6 lg:col-start-1 lg:sticky lg:top-24 lg:max-w-[500px] lg:justify-self-start">
+          <ProductGallery images={product.images} productTitle={product.title} />
         </div>
 
       </div>

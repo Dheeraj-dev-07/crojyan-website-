@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, ArrowRight, HeartHandshake, ShieldCheck, Clock } from 'lucide-react';
-import heroBouquetImg from '../assets/hero-bouquet1.jpeg';
+import heroBouquetImg from '../assets/hero-bouquet.jpeg';
 
 export default function Hero() {
   return (
@@ -19,13 +19,13 @@ export default function Hero() {
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-100/80 border border-rose-200/80 text-rose-800 text-xs font-semibold tracking-wide uppercase shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-rose-600 animate-spin" />
-              <span>Handcrafted Forever Flowers</span>
+              <span>Our Currated Love</span>
             </div>
 
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-charcoal leading-[1.15]">
-              Flowers That <br />
+              Everlasting blooms <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-rose-500 to-amber-600">
-                Never Wilt
+                handmade with love.
               </span>
             </h1>
 
@@ -40,7 +40,7 @@ export default function Hero() {
                 to="/shop"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-rose-600 text-white font-medium hover:bg-rose-700 shadow-lg shadow-rose-600/25 hover:shadow-xl hover:shadow-rose-600/35 transition-all duration-300 transform hover:-translate-y-0.5"
               >
-                <span>Explore Bouquets</span>
+                <span>Explore Collections</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
 
@@ -62,14 +62,14 @@ export default function Hero() {
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-center lg:justify-start text-rose-600 gap-1 font-semibold text-xs uppercase tracking-wider">
+                <div className="flex items-center justify-center lg:justify-start text-amber-600 gap-1 font-semibold text-xs uppercase tracking-wider">
                   <HeartHandshake className="w-4 h-4" /> Artisan Quality
                 </div>
                 <p className="text-xs text-stone-500">Soft cotton yarn blend</p>
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-center lg:justify-start text-amber-600 gap-1 font-semibold text-xs uppercase tracking-wider">
+                <div className="flex items-center justify-center lg:justify-start text-rose-600 gap-1 font-semibold text-xs uppercase tracking-wider">
                   <Clock className="w-4 h-4" /> Customized Gifts
                 </div>
                 <p className="text-xs text-stone-500">Includes gift note & ribbons</p>
@@ -95,7 +95,7 @@ export default function Hero() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">Featured Arrangement</p>
-                      <h3 className="font-serif text-lg font-bold text-charcoal">Blush Rose Bouquet</h3>
+                      <h3 className="font-serif text-lg font-bold text-charcoal">Blue Blooms</h3>
                     </div>
                     <span className="text-xl font-bold text-rose-600 font-serif">Starting ₹899</span>
                   </div>

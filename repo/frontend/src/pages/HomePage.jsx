@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import { apiRequest } from '../services/api';
 import { Flower2, Heart, Sparkles, ShieldCheck, ArrowRight, Scissors } from 'lucide-react';
 
+import SocialProofSection from '../components/SocialProofSection';
+
 export default function HomePage() {
+  const location = useLocation();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,6 +30,13 @@ export default function HomePage() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (location.hash !== '#bouquets') return;
+    requestAnimationFrame(() => {
+      document.getElementById('bouquets')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }, [location.hash]);
+
   return (
     <div className="space-y-20 pb-20">
       
@@ -34,7 +44,7 @@ export default function HomePage() {
       <Hero />
 
       {/* Featured Catalog Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="bouquets" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div>
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-rose-600 mb-1">
@@ -42,7 +52,7 @@ export default function HomePage() {
               <span>Studio Favorites</span>
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-              Handcrafted Forever Bouquets
+              Our Curated Collection of Crochet
             </h2>
           </div>
 
@@ -50,19 +60,19 @@ export default function HomePage() {
             to="/shop"
             className="inline-flex items-center gap-2 text-rose-600 hover:text-rose-700 font-semibold text-sm group"
           >
-            <span>View All Bouquets</span>
+            <span>View Our Collections</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((n) => (
               <ProductSkeleton key={n} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {featuredProducts.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
@@ -135,7 +145,7 @@ export default function HomePage() {
             </div>
             
             <h2 className="font-serif text-3xl sm:text-5xl font-bold leading-tight">
-              Ready to Gift a Forever Bouquet?
+              Ready to Gift a Handmade Love?
             </h2>
             
             <p className="text-stone-300 text-sm leading-relaxed">
@@ -146,12 +156,15 @@ export default function HomePage() {
               to="/shop"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-rose-600 text-white font-semibold text-sm shadow-lg hover:bg-rose-500 transition duration-300"
             >
-              <span>Order Your Custom Bouquet</span>
+              <span>Get Your Customized Crochet Gifts</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Social Proof & Instagram Section */}
+      <SocialProofSection />
 
     </div>
   );

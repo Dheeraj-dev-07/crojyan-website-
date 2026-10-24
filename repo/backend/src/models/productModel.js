@@ -43,6 +43,12 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Product description is required']
     },
+    category: {
+      type: String,
+      enum: ['bouquet', 'flower_pot', 'key_chain', 'other'],
+      default: 'bouquet',
+      index: true
+    },
     basePrice: {
       type: Number,
       required: [true, 'Base price is required'],

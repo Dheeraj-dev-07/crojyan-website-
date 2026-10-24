@@ -80,7 +80,7 @@ export default function CartDrawer() {
                     <div className="text-[11px] text-stone-500 space-y-0.5">
                       <div className="flex items-center gap-1">
                         <Ribbon className="w-3 h-3 text-rose-500" />
-                        <span>Ribbon: {item.selectedCustomization.ribbonColor}</span>
+                        <span>Flower color: {item.selectedCustomization.ribbonColor}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />

@@ -10,6 +10,15 @@ const getOrders = async (req, res, next) => {
   }
 };
 
+const getSalesSummary = async (req, res, next) => {
+  try {
+    const summary = await orderService.getSalesSummary(req.query.range);
+    return sendSuccess(res, 200, summary, null, 'Sales summary retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getOrderById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -33,6 +42,7 @@ const updateOrderStatus = async (req, res, next) => {
 
 module.exports = {
   getOrders,
+  getSalesSummary,
   getOrderById,
   updateOrderStatus
 };

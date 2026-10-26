@@ -44,7 +44,7 @@ export default function HomePage() {
               <span>Studio Favorites</span>
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-              Handcrafted Forever Bouquets
+              Curated Collection of Crochet
             </h2>
           </div>
 
@@ -52,19 +52,19 @@ export default function HomePage() {
             to="/shop"
             className="inline-flex items-center gap-2 text-rose-600 hover:text-rose-700 font-semibold text-sm group"
           >
-            <span>View All Bouquets</span>
+            <span>View All Collections</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {[1, 2, 3].map((n) => (
               <ProductSkeleton key={n} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
@@ -81,10 +81,10 @@ export default function HomePage() {
               The Artisan Promise
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-              How Each Bouquet is Born
+              Where Love Takes Shape
             </h2>
             <p className="text-stone-600 text-sm">
-              Every flower stem is individually crocheted by hand using premium soft yarn, shaped around flexible floral wire, and wrapped in eco-friendly parchment paper.
+              Handcrafted forever crochet flower bouquets stitched with love, premium cotton yarn, and endless care. Everlasting blooms created to preserve life's special moments.
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export default function HomePage() {
             </div>
             
             <h2 className="font-serif text-3xl sm:text-5xl font-bold leading-tight">
-              Ready to Gift a Forever Bouquet?
+              Have something in your mind?
             </h2>
             
             <p className="text-stone-300 text-sm leading-relaxed">
@@ -148,7 +148,7 @@ export default function HomePage() {
               to="/shop"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-rose-600 text-white font-semibold text-sm shadow-lg hover:bg-rose-500 transition duration-300"
             >
-              <span>Order Your Custom Bouquet</span>
+              <span>Order Your Custom Handmade Gift</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

@@ -21,12 +21,16 @@ const sortAndNormalizeImages = (images = []) => {
 };
 
 const getAllProducts = async (queryFilters = {}) => {
-  const { availability, priceMin, priceMax, page = 1, limit = 12 } = queryFilters;
+  const { availability, category, priceMin, priceMax, page = 1, limit = 12 } = queryFilters;
 
   const filterCriteria = {};
 
   if (availability) {
     filterCriteria.availability = availability;
+  }
+
+  if (category && ['bouquet', 'flower_pot', 'keychain', 'other'].includes(category)) {
+    filterCriteria.category = category === 'bouquet' ? { $in: ['bouquet', null] } : category;
   }
 
   if (priceMin || priceMax) {

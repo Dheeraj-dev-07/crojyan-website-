@@ -76,9 +76,9 @@ export default function CheckoutPage() {
         productId: item.bouquetId || item._id,
         quantity: item.quantity,
         selectedCustomization: {
-          ribbonColor: item.selectedCustomization.ribbonColor,
-          wrappingPaperShade: item.selectedCustomization.wrappingPaperShade,
-          giftCardText: item.selectedCustomization.giftCardText || ''
+          ribbonColor: item.selectedCustomization?.ribbonColor || 'Dusty Rose',
+          wrappingPaperShade: item.selectedCustomization?.wrappingPaperShade || 'Cream Matte',
+          giftCardText: item.selectedCustomization?.giftCardText || ''
         }
       }))
     };

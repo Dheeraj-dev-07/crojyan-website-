@@ -28,7 +28,7 @@ export default function CartDrawer() {
               </div>
               <div>
                 <h2 className="font-serif text-lg font-bold text-charcoal">Your Floral Basket</h2>
-                <p className="text-xs text-stone-500">{cartItems.length} bouquet selection(s)</p>
+                <p className="text-xs text-stone-500">{cartItems.length} product(s)</p>
               </div>
             </div>
             <button
@@ -66,7 +66,7 @@ export default function CartDrawer() {
                   className="bg-white p-4 rounded-xl border border-stone-200/80 shadow-2xs flex gap-4 relative group"
                 >
                   <img
-                    src={item.image}
+                    src={item.image || 'https://images.pexels.com/photos/19558765/pexels-photo-19558765.jpeg'}
                     alt={item.title}
                     className="w-20 h-20 object-cover rounded-lg bg-stone-100 flex-shrink-0"
                   />
@@ -80,13 +80,13 @@ export default function CartDrawer() {
                     <div className="text-[11px] text-stone-500 space-y-0.5">
                       <div className="flex items-center gap-1">
                         <Ribbon className="w-3 h-3 text-rose-500" />
-                        <span>Ribbon: {item.selectedCustomization.ribbonColor}</span>
+                        <span>Ribbon: {item.selectedCustomization?.ribbonColor || 'Dusty Rose'}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-                        <span>Wrapper: {item.selectedCustomization.wrappingPaperShade}</span>
+                        <span>Wrapper: {item.selectedCustomization?.wrappingPaperShade || 'Cream Matte'}</span>
                       </div>
-                      {item.selectedCustomization.giftCardText && (
+                      {item.selectedCustomization?.giftCardText && (
                         <div className="flex items-center gap-1 text-rose-600 font-medium line-clamp-1">
                           <Gift className="w-3 h-3" />
                           <span>Gift Note Included</span>

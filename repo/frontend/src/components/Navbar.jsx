@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Menu, X, ShieldCheck, Instagram, Gift, Flower2, KeyRound } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import crojyanLogo from '../assets/crojyan-logo.png';
@@ -9,6 +10,7 @@ export default function Navbar() {
   const { totalItemCount, setIsCartOpen } = useCart();
   const { isAdminAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [customOrderOpen, setCustomOrderOpen] = useState(false);
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
@@ -25,6 +27,26 @@ export default function Navbar() {
   }, [location.pathname, location.hash]);
 
   const handleCraftClick = () => setMobileMenuOpen(false);
+  const openCustomOrder = () => {
+    setMobileMenuOpen(false);
+    setCustomOrderOpen(true);
+  };
+
+  useEffect(() => {
+    if (!customOrderOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setCustomOrderOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [customOrderOpen]);
 
   return (
     <header className="sticky top-0 z-50 glass-nav border-b border-stone-200/60 shadow-sm transition-all duration-300">
@@ -76,6 +98,15 @@ export default function Navbar() {
 
           {/* Action Icons */}
           <div className="flex items-center gap-3">
+
+            <button
+              type="button"
+              onClick={openCustomOrder}
+              className="hidden md:inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+            >
+              <Instagram className="h-4 w-4" />
+              <span>Custom Order</span>
+            </button>
 
             {/* Admin Profile Button - Rendered ONLY on Storefront when Admin Session is Active */}
             {isStorefrontPage && isAdminAuthenticated && (
@@ -146,6 +177,14 @@ export default function Navbar() {
           >
             Our Craft
           </Link>
+          <button
+            type="button"
+            onClick={openCustomOrder}
+            className="flex items-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-base font-semibold text-white hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          >
+            <Instagram className="h-4 w-4" />
+            Custom Order
+          </button>
           {isStorefrontPage && isAdminAuthenticated && (
             <Link
               to="/admin"
@@ -157,6 +196,63 @@ export default function Navbar() {
             </Link>
           )}
         </nav>
+      )}
+
+      {customOrderOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-stone-950/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCustomOrderOpen(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="custom-order-title"
+            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-rose-100 bg-white p-6 shadow-2xl sm:p-8"
+          >
+            <button
+              type="button"
+              onClick={() => setCustomOrderOpen(false)}
+              aria-label="Close custom order message"
+              className="absolute right-4 top-4 rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+              autoFocus
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+              <Gift className="h-6 w-6" />
+            </div>
+            <h2 id="custom-order-title" className="font-serif text-2xl font-bold text-charcoal">
+              Have something in mind?
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">
+              We can create customized hampers, bouquets, keychains and charms, and more.
+            </p>
+
+            <ul className="mt-5 space-y-3 text-sm text-charcoal">
+              <li className="flex items-center gap-3"><Gift className="h-4 w-4 text-rose-500" /> Customized hampers</li>
+              <li className="flex items-center gap-3"><Flower2 className="h-4 w-4 text-rose-500" /> Handmade bouquets</li>
+              <li className="flex items-center gap-3"><KeyRound className="h-4 w-4 text-rose-500" /> Keychains and charms</li>
+              <li className="pl-7 text-stone-500">And more creations made just for you</li>
+            </ul>
+
+            <p className="mt-5 text-sm leading-relaxed text-stone-600">
+              DM us on Instagram and share your idea for the creation.
+            </p>
+            <a
+              href="https://www.instagram.com/direct/t/17848803671640868/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setCustomOrderOpen(false)}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+            >
+              <Instagram className="h-4 w-4" /> DM us on Instagram
+            </a>
+          </section>
+        </div>,
+        document.body
       )}
     </header>
   );

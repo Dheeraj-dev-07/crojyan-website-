@@ -75,7 +75,7 @@ export default function OrderSuccessPage() {
                 <div key={idx} className="pt-2 text-xs space-y-1">
                   <div className="flex justify-between font-bold text-charcoal">
                     <span>{item.bouquetTitle}</span>
-                    <span className="text-rose-600">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                    <span className="text-rose-600">&#8377;{(item.unitPrice * item.quantity).toLocaleString('en-IN')}</span>
                   </div>
                   <div className="text-stone-500 flex items-center gap-2">
                     <Ribbon className="w-3 h-3 text-rose-400" />

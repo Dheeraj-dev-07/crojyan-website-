@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import { apiRequest } from '../services/api';
-import { Filter, SlidersHorizontal, Package, RefreshCw } from 'lucide-react';
+import { Package, RefreshCw } from 'lucide-react';
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -11,7 +11,7 @@ export default function ShopPage() {
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalCount: 0 });
   const [loading, setLoading] = useState(true);
 
-  const currentAvailability = searchParams.get('availability') || '';
+  const currentCategory = searchParams.get('category') || '';
   const priceMin = searchParams.get('priceMin') || '';
   const priceMax = searchParams.get('priceMax') || '';
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -21,7 +21,7 @@ export default function ShopPage() {
       setLoading(true);
       try {
         const queryParams = new URLSearchParams();
-        if (currentAvailability) queryParams.set('availability', currentAvailability);
+        if (currentCategory) queryParams.set('category', currentCategory);
         if (priceMin) queryParams.set('priceMin', priceMin);
         if (priceMax) queryParams.set('priceMax', priceMax);
         queryParams.set('page', page.toString());
@@ -40,7 +40,7 @@ export default function ShopPage() {
     };
 
     fetchCatalog();
-  }, [currentAvailability, priceMin, priceMax, page]);
+  }, [currentCategory, priceMin, priceMax, page]);
 
   const handleFilterChange = (key, value) => {
     const params = new URLSearchParams(searchParams);
@@ -60,10 +60,10 @@ export default function ShopPage() {
       <div className="border-b border-stone-200 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <span className="text-xs font-semibold uppercase tracking-widest text-rose-600">
-            Handcrafted Catalog
+            Our Catalog
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-            Forever Bouquet Collection
+            Curated Collection of Crochet
           </h1>
         </div>
         <p className="text-stone-500 text-sm">
@@ -72,54 +72,34 @@ export default function ShopPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-        
-        {/* Availability Filter Buttons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => handleFilterChange('availability', '')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
-              currentAvailability === ''
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            All Bouquets
-          </button>
-          <button
-            onClick={() => handleFilterChange('availability', 'available')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
-              currentAvailability === 'available'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            Ready to Ship
-          </button>
-          <button
-            onClick={() => handleFilterChange('availability', 'made_to_order')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
-              currentAvailability === 'made_to_order'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            Made to Order
-          </button>
-          <button
-            onClick={() => handleFilterChange('availability', 'sold_out')}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
-              currentAvailability === 'sold_out'
-                ? 'bg-stone-800 text-white shadow-sm'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
-          >
-            Sold Out
-          </button>
+      <div className="bg-white p-4 rounded-2xl border border-stone-200/80 shadow-2xs space-y-4">
+
+        {/* Product Collection Buttons */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {[
+            { label: 'All Collections', value: '' },
+            { label: 'Flower Pots', value: 'flower_pot' },
+            { label: 'Keychains', value: 'keychain' },
+            { label: 'Others', value: 'other' }
+          ].map((category) => (
+            <button
+              key={category.value || 'all'}
+              type="button"
+              onClick={() => handleFilterChange('category', category.value)}
+              aria-pressed={currentCategory === category.value}
+              className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition ${
+                currentCategory === category.value
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-stone-100 text-stone-600 hover:bg-rose-50 hover:text-rose-700'
+              }`}
+            >
+              {category.label}
+            </button>
+          ))}
         </div>
 
         {/* Clear Filters reset button */}
-        {(currentAvailability || priceMin || priceMax) && (
+        {(currentCategory || priceMin || priceMax || searchParams.has('availability')) && (
           <button
             onClick={() => setSearchParams({})}
             className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:underline"
@@ -132,7 +112,7 @@ export default function ShopPage() {
 
       {/* Catalog Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <ProductSkeleton key={n} />
           ))}
@@ -140,19 +120,19 @@ export default function ShopPage() {
       ) : products.length === 0 ? (
         <div className="bg-white rounded-2xl border border-stone-200 p-12 text-center space-y-4">
           <Package className="w-12 h-12 text-stone-300 mx-auto" />
-          <h3 className="font-serif text-xl font-bold text-charcoal">No bouquets match your filter</h3>
+          <h3 className="font-serif text-xl font-bold text-charcoal">No products match your filters</h3>
           <p className="text-stone-500 text-sm max-w-sm mx-auto">
-            Try adjusting your availability or price filters to see more handcrafted arrangements.
+            Try another collection or reset your price filters.
           </p>
           <button
             onClick={() => setSearchParams({})}
             className="px-6 py-2.5 rounded-full bg-rose-600 text-white text-xs font-semibold shadow hover:bg-rose-700 transition"
           >
-            Show All Bouquets
+            Show All Collections
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}

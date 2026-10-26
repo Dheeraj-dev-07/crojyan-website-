@@ -66,9 +66,10 @@ export default function AdminDashboardPage() {
 
   const [productForm, setProductForm] = useState({
     title: '',
+    category: 'bouquet',
     description: '',
     basePrice: '',
-    stemCount: '',
+    stemCount: '1',
     heightCm: '',
     widthCm: '',
     ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
@@ -295,9 +296,10 @@ export default function AdminDashboardPage() {
       setEditingProduct(product);
       setProductForm({
         title: product.title,
+        category: product.category || 'bouquet',
         description: product.description,
         basePrice: product.basePrice.toString(),
-        stemCount: product.stemCount.toString(),
+        stemCount: product.stemCount?.toString() || '1',
         heightCm: product.dimensions?.heightCm?.toString() || '35',
         widthCm: product.dimensions?.widthCm?.toString() || '25',
         ribbonColors: product.customization?.ribbonColors?.join(', ') || '',
@@ -325,9 +327,10 @@ export default function AdminDashboardPage() {
       setEditingProduct(null);
       setProductForm({
         title: '',
+        category: 'bouquet',
         description: '',
         basePrice: '45.00',
-        stemCount: '7',
+        stemCount: '1',
         heightCm: '35',
         widthCm: '25',
         ribbonColors: 'Dusty Rose, Champagne Silk, Forest Sage',
@@ -368,6 +371,7 @@ export default function AdminDashboardPage() {
 
     const formData = new FormData();
     formData.append('title', productForm.title);
+    formData.append('category', productForm.category);
     formData.append('description', productForm.description);
     formData.append('basePrice', productForm.basePrice);
     formData.append('stemCount', productForm.stemCount);
@@ -432,7 +436,7 @@ export default function AdminDashboardPage() {
         fetchProducts();
       }
     } catch (err) {
-      setModalError(err.message || 'Failed to save bouquet product');
+      setModalError(err.message || 'Failed to save product');
     } finally {
       setFormSubmitting(false);
     }
@@ -692,7 +696,7 @@ export default function AdminDashboardPage() {
                         <div>
                           <h3 className="font-serif font-bold text-base text-charcoal line-clamp-1">{product.title}</h3>
                           <span className="font-serif font-bold text-rose-600 text-sm">₹{product.basePrice}</span>
-                          <div className="text-[11px] text-stone-500">{product.stemCount} Stems • Stock: {product.stockCount}</div>
+                          <div className="text-[11px] text-stone-500">Stock: {product.stockCount}</div>
                         </div>
                       </div>
                       <p className="text-xs text-stone-500 line-clamp-2">{product.description}</p>
@@ -735,7 +739,7 @@ export default function AdminDashboardPage() {
             
             <div className="flex items-center justify-between border-b border-stone-200 pb-4">
               <h3 className="font-serif text-xl font-bold text-charcoal">
-                {editingProduct ? 'Edit Bouquet Specifications' : 'Add New Handcrafted Bouquet'}
+                {editingProduct ? 'Edit Product Specification' : 'Add New Handcrafted Product'}
               </h3>
               <button onClick={closeProductModal} className="text-stone-400 hover:text-stone-600">
                 <X className="w-6 h-6" />
@@ -752,7 +756,7 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
               
               <div>
-                <label className="block font-bold text-charcoal mb-1">Bouquet Title</label>
+                <label className="block font-bold text-charcoal mb-1">Product Title</label>
                 <input
                   type="text"
                   required
@@ -761,6 +765,20 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Vintage Peony Dream Bouquet"
                   className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-rose-500/20"
                 />
+              </div>
+
+              <div>
+                <label className="block font-bold text-charcoal mb-1">Collection</label>
+                <select
+                  value={productForm.category}
+                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs bg-white focus:ring-2 focus:ring-rose-500/20"
+                >
+                  <option value="bouquet">Bouquet</option>
+                  <option value="flower_pot">Flower Pot</option>
+                  <option value="keychain">Keychain</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
 
               <div>
@@ -775,7 +793,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-charcoal mb-1">Base Price (₹)</label>
                   <input
@@ -784,17 +802,6 @@ export default function AdminDashboardPage() {
                     required
                     value={productForm.basePrice}
                     onChange={(e) => setProductForm({ ...productForm, basePrice: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Stem Count</label>
-                  <input
-                    type="number"
-                    required
-                    value={productForm.stemCount}
-                    onChange={(e) => setProductForm({ ...productForm, stemCount: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
                   />
                 </div>
@@ -846,30 +853,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Ribbon Shades (Comma Separated)</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.ribbonColors}
-                    onChange={(e) => setProductForm({ ...productForm, ribbonColors: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-charcoal mb-1">Wrapping Paper Shades (Comma Separated)</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.wrappingPaperShades}
-                    onChange={(e) => setProductForm({ ...productForm, wrappingPaperShades: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="block font-bold text-charcoal mb-1">Availability Status</label>
                 <select
@@ -887,7 +870,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-charcoal">
-                    Bouquet Multi-Photo Gallery (1–8 Photos • Max 5MB each)
+                    Product Multi-Photo Gallery (1–8 Photos • Max 5MB each)
                   </label>
                   <span className="text-[11px] font-semibold text-stone-500">
                     {imageItems.length} / 8 photos selected
@@ -1035,7 +1018,7 @@ export default function AdminDashboardPage() {
                       <span>Uploading Photos & Saving...</span>
                     </>
                   ) : (
-                    'Save Bouquet'
+                    'Save Product'
                   )}
                 </button>
               </div>

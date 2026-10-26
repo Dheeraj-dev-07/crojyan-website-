@@ -18,10 +18,10 @@ const createPaymentOrderSchema = z.object({
         productId: z.string().min(1, 'Product ID is required'),
         quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1'),
         selectedCustomization: z.object({
-          ribbonColor: z.string().min(1, 'Ribbon color is required'),
-          wrappingPaperShade: z.string().min(1, 'Wrapping paper shade is required'),
+          ribbonColor: z.string().min(1, 'Ribbon color is required').default('Dusty Rose'),
+          wrappingPaperShade: z.string().min(1, 'Wrapping paper shade is required').default('Cream Matte'),
           giftCardText: z.string().optional().default('')
-        })
+        }).default({})
       })
     )
     .min(1, 'Cart must contain at least one item')

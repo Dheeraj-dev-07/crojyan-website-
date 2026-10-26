@@ -91,23 +91,36 @@ export default function ProductDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Bouquet Catalog
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
         {/* Left Column: Multi-angle Image Gallery */}
-        <div className="lg:col-span-6 space-y-4">
+        <div className="lg:col-span-5 lg:sticky lg:top-24 lg:self-start">
           <ProductGallery images={product.images} productTitle={product.title} />
+        </div>
+
+        {/* Right Column: Title, Customization & Add to Cart */}
+        <div className="lg:col-span-7 space-y-6">
+
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-600 mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              Forever Crochet Collection
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
+              {product.title}
+            </h1>
+            <p className="text-stone-500 text-sm mt-3 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
 
           {/* Product Specs Box */}
           <div className="bg-white p-6 rounded-2xl border border-stone-200/80 shadow-2xs space-y-4">
             <h3 className="font-serif font-bold text-sm text-charcoal flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-rose-500" /> Bouquet Specifications
+              <Sparkles className="w-4 h-4 text-rose-500" /> Product Specifications
             </h3>
 
             <div className="grid grid-cols-2 gap-4 text-xs text-stone-600">
-              <div>
-                <span className="text-stone-400 block">Stem Count:</span>
-                <span className="font-semibold text-charcoal">{product.stemCount} Handcrafted Stems</span>
-              </div>
               <div>
                 <span className="text-stone-400 block">Dimensions:</span>
                 <span className="font-semibold text-charcoal">
@@ -123,24 +136,6 @@ export default function ProductDetailPage() {
                 <span className="font-semibold text-charcoal">{product.customization?.defaultLeadTimeDays || 3} Business Days</span>
               </div>
             </div>
-          </div>
-
-        </div>
-
-        {/* Right Column: Title, Customization & Add to Cart */}
-        <div className="lg:col-span-6 space-y-6">
-
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-600 mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Forever Crochet Collection
-            </div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-charcoal">
-              {product.title}
-            </h1>
-            <p className="text-stone-500 text-sm mt-3 leading-relaxed">
-              {product.description}
-            </p>
           </div>
 
           <div className="flex items-baseline gap-3 pt-2 border-t border-stone-200">
@@ -254,7 +249,7 @@ export default function ProductDetailPage() {
                   'Currently Sold Out'
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" /> Add to Basket — ${(product.basePrice * quantity).toFixed(2)}
+                    Add to Basket &mdash; &#8377;{(product.basePrice * quantity).toLocaleString('en-IN')}
                   </>
                 )}
               </button>

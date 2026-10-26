@@ -6,7 +6,16 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = localStorage.getItem('bloom_cart_items');
-      return saved ? JSON.parse(saved) : [];
+      const items = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(items)) return [];
+      return items.map((item) => ({
+        ...item,
+        selectedCustomization: {
+          ribbonColor: item.selectedCustomization?.ribbonColor || 'Dusty Rose',
+          wrappingPaperShade: item.selectedCustomization?.wrappingPaperShade || 'Cream Matte',
+          giftCardText: item.selectedCustomization?.giftCardText || ''
+        }
+      }));
     } catch (e) {
       return [];
     }
@@ -28,8 +37,8 @@ export const CartProvider = ({ children }) => {
       const existingIndex = prevItems.findIndex(
         (item) =>
           item.bouquetId === product._id &&
-          item.selectedCustomization.ribbonColor === selectedCustomization.ribbonColor &&
-          item.selectedCustomization.wrappingPaperShade === selectedCustomization.wrappingPaperShade
+          item.selectedCustomization?.ribbonColor === selectedCustomization.ribbonColor &&
+          item.selectedCustomization?.wrappingPaperShade === selectedCustomization.wrappingPaperShade
       );
 
       if (existingIndex > -1) {

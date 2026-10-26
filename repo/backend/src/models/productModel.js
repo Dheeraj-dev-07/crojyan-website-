@@ -33,6 +33,12 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Product title is required'],
       trim: true
     },
+    category: {
+      type: String,
+      enum: ['bouquet', 'flower_pot', 'keychain', 'other'],
+      default: 'bouquet',
+      index: true
+    },
     slug: {
       type: String,
       unique: true,

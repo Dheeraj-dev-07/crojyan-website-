@@ -9,6 +9,7 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
+import OurCraftPage from './pages/OurCraftPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
@@ -26,6 +27,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/shop" element={<ShopPage />} />
+                <Route path="/our-craft" element={<OurCraftPage />} />
                 <Route path="/products/:id" element={<ProductDetailPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />

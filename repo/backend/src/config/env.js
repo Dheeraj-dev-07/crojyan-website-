@@ -36,9 +36,19 @@ if (process.env.JWT_SECRET.length < 32) {
   process.exit(1);
 }
 
+const rawTrustProxyHops = process.env.TRUST_PROXY_HOPS;
+const parsedTrustProxyHops =
+  rawTrustProxyHops !== undefined && rawTrustProxyHops !== ''
+    ? parseInt(rawTrustProxyHops, 10)
+    : NaN;
+const trustProxyHops = !Number.isNaN(parsedTrustProxyHops)
+  ? parsedTrustProxyHops
+  : (nodeEnv === 'production' ? 1 : 0);
+
 module.exports = {
   port: process.env.PORT || 5000,
   nodeEnv,
+  trustProxyHops,
   mongoUri: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
